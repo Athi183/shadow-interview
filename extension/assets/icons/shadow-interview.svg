@@ -1,0 +1,6 @@
+<!-- Responsibility: provide the standalone microphone mark used by Shadow
+     Interview branding; the injected launcher uses an equivalent inline SVG. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="8" y="2" width="8" height="13" rx="4" />
+  <path d="M4 11a8 8 0 0 0 16 0M12 19v3M8 22h8" />
+</svg>

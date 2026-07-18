@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "Shadow Interview",
+  "version": "0.1.0",
+  "description": "A local-only interview companion launcher for LeetCode problem pages.",
+  "content_scripts": [
+    {
+      "matches": ["https://leetcode.com/problems/*"],
+      "js": [
+        "content/domParser.js",
+        "content/panel.js",
+        "content/content.js"
+      ],
+      "css": ["styles/panel.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}
