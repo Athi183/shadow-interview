@@ -1,0 +1,4 @@
+# Responsibility: keep generated dependencies and build output out of version control.
+node_modules/
+dist/
+.vite/
