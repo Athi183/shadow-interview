@@ -4,6 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
+from app.models.interview_event import InterviewEventType
 from app.models.interview_session import InterviewStage, InterviewStatus
 
 
@@ -31,6 +32,8 @@ class MessageResponse(BaseModel):
     session_id: str
     interview_stage: InterviewStage
     ai_response: str
+    observations: dict[str, bool | str]
+    recent_events: list[dict[str, str]]
     timeline: list[dict[str, str]]
 
 
@@ -46,6 +49,21 @@ class UpdateSessionResponse(BaseModel):
     session_id: str
     interview_stage: InterviewStage
     status: InterviewStatus
+    recent_events: list[dict[str, str]]
+    timeline: list[dict[str, str]]
+
+
+class InterviewEventRequest(BaseModel):
+    session_id: str = Field(min_length=1)
+    event_type: InterviewEventType
+    payload: dict[str, str] = Field(default_factory=dict)
+
+
+class InterviewEventResponse(BaseModel):
+    session_id: str
+    interview_stage: InterviewStage
+    event_type: InterviewEventType
+    recent_events: list[dict[str, str]]
     timeline: list[dict[str, str]]
 
 
@@ -77,5 +95,6 @@ class SessionSummaryResponse(BaseModel):
     code_snapshots: list[dict[str, str]]
     transcript_history: list[dict[str, str]]
     candidate_notes: list[str]
+    recent_events: list[dict[str, str]]
     timeline: list[dict[str, str]]
     status: InterviewStatus

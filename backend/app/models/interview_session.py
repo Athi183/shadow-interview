@@ -5,6 +5,8 @@ from datetime import datetime, timezone
 from enum import StrEnum
 from uuid import uuid4
 
+from app.models.interview_event import InterviewEvent
+
 
 class InterviewStage(StrEnum):
     INTRODUCTION = "INTRODUCTION"
@@ -13,7 +15,7 @@ class InterviewStage(StrEnum):
     IMPLEMENTATION = "IMPLEMENTATION"
     OPTIMIZATION = "OPTIMIZATION"
     EDGE_CASES = "EDGE_CASES"
-    COMPLEXITY = "COMPLEXITY"
+    COMPLEXITY_ANALYSIS = "COMPLEXITY_ANALYSIS"
     WRAP_UP = "WRAP_UP"
 
 
@@ -55,6 +57,7 @@ class InterviewSession:
     code_snapshots: list[dict[str, str]]
     transcript_history: list[dict[str, str]]
     candidate_notes: list[str]
+    events: list[InterviewEvent]
     timeline: list[TimelineEvent]
     status: InterviewStatus
 
@@ -78,6 +81,7 @@ class InterviewSession:
             code_snapshots=[],
             transcript_history=[],
             candidate_notes=[],
+            events=[],
             timeline=[],
             status=InterviewStatus.ACTIVE,
         )

@@ -7,6 +7,18 @@ def timeline_to_dicts(session: InterviewSession) -> list[dict[str, str]]:
     return [event.__dict__ for event in session.timeline]
 
 
+def recent_events_to_dicts(session: InterviewSession, limit: int = 6) -> list[dict[str, str]]:
+    return [
+        {
+            "event_id": event.event_id,
+            "event_type": event.event_type.value,
+            "created_at": event.created_at.isoformat(),
+            "summary": event.payload.get("summary", event.payload.get("message", event.payload.get("detail", ""))),
+        }
+        for event in session.events[-limit:]
+    ]
+
+
 def session_to_summary(session: InterviewSession) -> dict:
     return {
         "session_id": session.session_id,
@@ -25,6 +37,7 @@ def session_to_summary(session: InterviewSession) -> dict:
         "code_snapshots": session.code_snapshots,
         "transcript_history": session.transcript_history,
         "candidate_notes": session.candidate_notes,
+        "recent_events": recent_events_to_dicts(session),
         "timeline": timeline_to_dicts(session),
         "status": session.status,
     }

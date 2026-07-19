@@ -2,20 +2,20 @@
 
 import { CURRENT_INTERVIEW_STAGE, INTERVIEW_STAGES } from "../features/interview/constants/interviewStages";
 
-export const chatMessages = [
-  {
-    id: "welcome",
-    role: "interviewer",
-    content:
-      "Welcome to your mock interview. I'll evaluate your reasoning, communication, and problem-solving process. I won't reveal solutions directly, but I'll challenge your thinking just like a real interviewer would. Let's begin - tell me your first approach before writing any code.",
-  },
-  {
-    id: "candidate",
-    role: "candidate",
-    content:
-      "I would first clarify whether the input can contain duplicates, then compare a brute-force approach with a hash map solution before choosing the right trade-off.",
-  },
-];
+export const liveInterview = {
+  currentStage: "Initial Approach",
+  aiQuestion:
+    "You mentioned starting with brute force and then moving toward a hash map. What invariant would your hash map maintain as you scan the array?",
+  candidateResponse:
+    "I would store each number I have seen with its index, then for each new number check whether the complement already exists.",
+  recentEvents: [
+    { id: "started", timestamp: "00:00", type: "INTERVIEW_STARTED", title: "Interview Started", detail: "Workspace opened with LeetCode problem context." },
+    { id: "loaded", timestamp: "00:08", type: "PROBLEM_LOADED", title: "Problem Loaded", detail: "Two Sum detected from LeetCode." },
+    { id: "approach", timestamp: "00:45", type: "CANDIDATE_MESSAGE", title: "Candidate explained brute force", detail: "Initial reasoning compared nested loops with a hash map direction." },
+    { id: "optimized", timestamp: "02:15", type: "OPTIMIZATION_DETECTED", title: "Candidate switched to HashMap", detail: "Reasoning analyzer detected an optimization attempt." },
+    { id: "complexity", timestamp: "03:40", type: "AI_RESPONSE", title: "AI challenged time complexity", detail: "Interviewer asked the candidate to justify the expected runtime." },
+  ],
+};
 
 export const transcriptSegments = [
   { timestamp: "00:08", speaker: "You", text: "I would start by understanding the constraints and expected complexity." },
@@ -27,8 +27,4 @@ export const interviewStages = INTERVIEW_STAGES;
 
 export const currentInterviewStage = CURRENT_INTERVIEW_STAGE;
 
-export const timelineEvents = [
-  { id: "started", timestamp: "00:00", title: "Interview Started", detail: "Workspace opened with LeetCode problem context." },
-  { id: "approach", timestamp: "00:45", title: "Candidate explained brute force", detail: "Initial approach compared nested loops with a hash map direction." },
-  { id: "challenge", timestamp: "02:10", title: "Interviewer challenged complexity", detail: "Next question focuses on trade-offs before implementation." },
-];
+export const timelineEvents = liveInterview.recentEvents;

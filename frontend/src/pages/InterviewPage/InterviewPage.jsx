@@ -2,14 +2,14 @@
 
 import Navbar from "../../components/Navbar/Navbar";
 import ProblemPanel from "../../components/ProblemPanel/ProblemPanel";
-import InterviewChat from "../../components/InterviewChat/InterviewChat";
 import InterviewTimeline from "../../components/InterviewTimeline/InterviewTimeline";
+import LiveInterviewTimeline from "../../components/LiveInterviewTimeline/LiveInterviewTimeline";
 import TranscriptPanel from "../../components/TranscriptPanel/TranscriptPanel";
 import ProgressTracker from "../../components/ProgressTracker/ProgressTracker";
 import {
-  chatMessages,
   currentInterviewStage,
   interviewStages,
+  liveInterview,
   timelineEvents,
   transcriptSegments,
 } from "../../data/interviewData";
@@ -37,7 +37,7 @@ export default function InterviewPage() {
             <ProblemPanel problem={problem} />
             <ProgressTracker stages={interviewStages} currentStage={currentInterviewStage} />
           </aside>
-          <InterviewChat messages={chatMessages} />
+          <LiveInterviewTimeline interview={liveInterview} />
           <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
             <TranscriptPanel segments={transcriptSegments} />
             <InterviewTimeline events={timelineEvents} />
