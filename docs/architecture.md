@@ -1,22 +1,55 @@
-# Initial architecture
+# Shadow Interview architecture
 
-## Current scope
+## Product flow
 
-The first increment is a client-only Chrome extension. Chrome injects ordered,
-modular content scripts only into `https://leetcode.com/problems/*`. A DOM
-parser extracts the title, difficulty, and page URL, while a panel module
-renders the floating launcher and local interview-context panel. Nothing is
-persisted or transmitted.
+```text
+LeetCode
+  -> Chrome Extension
+  -> React Interview Workspace
+  -> Interview Engine (FastAPI)
+```
 
-## Deliberately deferred
+The extension is a lightweight launcher. It detects the active LeetCode problem,
+opens the React workspace, and passes problem context through URL parameters.
 
-- AI prompts, model calls, and answer generation
-- Backend endpoints, authentication, persistence, and analytics
-- Audio recording or speech-to-text
-- Evaluation reports
+The React application owns the interview UI. It renders problem context,
+interview room, transcript, progress, and timeline surfaces. It does not call
+GPT or the backend yet.
 
-## Future boundary
+The FastAPI backend owns future interview business logic. It defines session
+models, session routes, service boundaries, and prompt templates, but no GPT
+service calls are active in this milestone.
 
-When these features are introduced, the extension should remain responsible
-for page-local interaction and call a backend through a narrow client module.
-That keeps site injection, interview orchestration, and persistence separate.
+## Application boundaries
+
+- `extension/`: page detection, launcher UI, handoff to React.
+- `frontend/`: React workspace, UI state, route-level composition.
+- `backend/`: FastAPI session engine, orchestration boundaries, prompt modules.
+
+## Interview session model
+
+The backend introduces a central in-memory `InterviewSession` with:
+
+- `session_id`
+- `problem_title`
+- `difficulty`
+- `problem_url`
+- `language`
+- `started_at`
+- `elapsed_time`
+- `current_stage`
+- `conversation_history`
+- `code_snapshots`
+- `transcript_history`
+- `candidate_notes`
+- `status`
+- `final_evaluation`
+
+## Deferred work
+
+- GPT-5.6 calls
+- Frontend-to-backend communication
+- Voice recording or speech-to-text
+- Authentication
+- Persistence or database storage
+- Final report generation

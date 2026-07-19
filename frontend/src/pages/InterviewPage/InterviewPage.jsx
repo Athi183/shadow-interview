@@ -3,10 +3,17 @@
 import Navbar from "../../components/Navbar/Navbar";
 import ProblemPanel from "../../components/ProblemPanel/ProblemPanel";
 import InterviewChat from "../../components/InterviewChat/InterviewChat";
+import InterviewTimeline from "../../components/InterviewTimeline/InterviewTimeline";
 import TranscriptPanel from "../../components/TranscriptPanel/TranscriptPanel";
 import ProgressTracker from "../../components/ProgressTracker/ProgressTracker";
-import { chatMessages, interviewSteps, transcriptSegments } from "../../data/interviewData";
-import useInterviewProblem from "../../hooks/useInterviewProblem";
+import {
+  chatMessages,
+  currentInterviewStage,
+  interviewStages,
+  timelineEvents,
+  transcriptSegments,
+} from "../../data/interviewData";
+import useInterviewProblem from "../../features/interview/hooks/useInterviewProblem";
 
 export default function InterviewPage() {
   const problem = useInterviewProblem();
@@ -28,11 +35,12 @@ export default function InterviewPage() {
         <div className="grid gap-5 xl:grid-cols-[minmax(230px,0.7fr)_minmax(480px,1.45fr)_minmax(280px,0.85fr)]">
           <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
             <ProblemPanel problem={problem} />
-            <ProgressTracker steps={interviewSteps} currentStep={1} />
+            <ProgressTracker stages={interviewStages} currentStage={currentInterviewStage} />
           </aside>
           <InterviewChat messages={chatMessages} />
-          <aside className="xl:sticky xl:top-6 xl:self-start">
+          <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
             <TranscriptPanel segments={transcriptSegments} />
+            <InterviewTimeline events={timelineEvents} />
           </aside>
         </div>
         <div className="mt-7 flex justify-end border-t border-white/7 pt-6">

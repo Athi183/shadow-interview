@@ -1,0 +1,12 @@
+[project]
+name = "shadow-interview-api"
+version = "0.1.0"
+description = "FastAPI backend architecture for Shadow Interview."
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115.0",
+  "uvicorn[standard]>=0.30.0",
+]
+
+[tool.uvicorn]
+factory = false
