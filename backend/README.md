@@ -1,22 +1,37 @@
 # Shadow Interview API
 
-This directory contains the FastAPI architecture scaffold for the future
-Interview Engine. It defines the boundaries for session management,
-orchestration, prompt templates, reasoning analysis, and evaluation.
+This directory contains the FastAPI Interview Engine for Shadow Interview. It
+manages in-memory interview sessions, tracks timeline events, selects interview
+stages, and isolates OpenAI API communication inside `GPTService`.
 
-The backend does not call GPT, connect to a database, authenticate users, or
-communicate with the frontend yet.
+The backend does not use a database, authentication, voice input, or final
+evaluation logic yet. The React frontend is not connected to these endpoints in
+this milestone.
 
 ## Structure
 
 - `app/main.py`: FastAPI entrypoint.
-- `app/routers/`: HTTP route definitions.
-- `app/services/`: business logic boundaries.
-- `app/models/`: internal domain models.
+- `app/routers/`: HTTP route definitions for `/session/*`.
+- `app/services/`: session management, orchestration, GPT boundary, timeline, and placeholder analyzers.
+- `app/models/`: internal interview session domain models.
 - `app/schemas/`: Pydantic request and response contracts.
-- `app/prompts/`: future GPT prompt templates.
-- `app/core/`: configuration.
-- `app/utils/`: shared helpers.
+- `app/prompts/`: reusable prompt templates.
+- `app/core/`: environment-based configuration.
+- `app/utils/`: mapping helpers.
+
+## Environment
+
+Set your OpenAI API key before calling `/session/message`:
+
+```bash
+export OPENAI_API_KEY="your_api_key_here"
+```
+
+Optionally override the model:
+
+```bash
+export OPENAI_MODEL="gpt-5.6"
+```
 
 ## Local commands
 
@@ -36,6 +51,8 @@ Available local endpoints:
 
 ```text
 GET  /health
-POST /api/sessions
-GET  /api/sessions/{session_id}
+POST /session/start
+POST /session/update
+POST /session/message
+POST /session/end
 ```

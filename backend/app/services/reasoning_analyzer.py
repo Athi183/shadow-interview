@@ -1,4 +1,4 @@
-"""Defines the future reasoning analyzer boundary without external API calls."""
+"""Placeholder boundary for future reasoning analysis."""
 
 from app.prompts.reasoning_analyzer import REASONING_ANALYZER_PROMPT
 
@@ -6,7 +6,7 @@ from app.prompts.reasoning_analyzer import REASONING_ANALYZER_PROMPT
 class ReasoningAnalyzer:
     def describe_capability(self) -> dict[str, str]:
         return {
-            "status": "disabled",
+            "status": "placeholder",
             "prompt_template": REASONING_ANALYZER_PROMPT,
         }
 

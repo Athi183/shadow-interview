@@ -1,4 +1,4 @@
-"""Domain model for an in-memory interview session."""
+"""Domain model for an in-memory Shadow Interview session."""
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -13,14 +13,28 @@ class InterviewStage(StrEnum):
     IMPLEMENTATION = "IMPLEMENTATION"
     OPTIMIZATION = "OPTIMIZATION"
     EDGE_CASES = "EDGE_CASES"
-    COMPLEXITY_ANALYSIS = "COMPLEXITY_ANALYSIS"
+    COMPLEXITY = "COMPLEXITY"
     WRAP_UP = "WRAP_UP"
 
 
 class InterviewStatus(StrEnum):
-    READY = "READY"
     ACTIVE = "ACTIVE"
-    COMPLETED = "COMPLETED"
+    ENDED = "ENDED"
+
+
+@dataclass
+class TimelineEvent:
+    timestamp: str
+    label: str
+    detail: str
+
+
+@dataclass
+class ConversationMessage:
+    role: str
+    content: str
+    stage: InterviewStage
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass
@@ -29,23 +43,45 @@ class InterviewSession:
     problem_title: str
     difficulty: str
     problem_url: str
-    language: str = "JavaScript"
-    started_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    elapsed_time: int = 0
-    current_stage: InterviewStage = InterviewStage.INTRODUCTION
-    conversation_history: list[dict[str, str]] = field(default_factory=list)
-    code_snapshots: list[dict[str, str]] = field(default_factory=list)
-    transcript_history: list[dict[str, str]] = field(default_factory=list)
-    candidate_notes: list[str] = field(default_factory=list)
-    status: InterviewStatus = InterviewStatus.READY
-    final_evaluation: dict[str, str] | None = None
+    language: str
+    started_at: datetime
+    created_at: datetime
+    elapsed_time: int
+    current_stage: InterviewStage
+    interview_stage: InterviewStage
+    current_code: str
+    transcript: str
+    conversation_history: list[ConversationMessage]
+    code_snapshots: list[dict[str, str]]
+    transcript_history: list[dict[str, str]]
+    candidate_notes: list[str]
+    timeline: list[TimelineEvent]
+    status: InterviewStatus
 
     @classmethod
-    def create(cls, problem_title: str, difficulty: str, problem_url: str, language: str = "JavaScript") -> "InterviewSession":
+    def create(cls, problem_title: str, difficulty: str, problem_url: str, language: str) -> "InterviewSession":
+        created_at = datetime.now(timezone.utc)
         return cls(
             session_id=str(uuid4()),
             problem_title=problem_title,
             difficulty=difficulty,
             problem_url=problem_url,
             language=language,
+            started_at=created_at,
+            created_at=created_at,
+            elapsed_time=0,
+            current_stage=InterviewStage.INTRODUCTION,
+            interview_stage=InterviewStage.INTRODUCTION,
+            current_code="",
+            transcript="",
+            conversation_history=[],
+            code_snapshots=[],
+            transcript_history=[],
+            candidate_notes=[],
+            timeline=[],
+            status=InterviewStatus.ACTIVE,
         )
+
+    def sync_stage(self, stage: InterviewStage) -> None:
+        self.current_stage = stage
+        self.interview_stage = stage
