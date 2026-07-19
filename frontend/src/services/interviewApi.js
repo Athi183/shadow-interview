@@ -12,7 +12,10 @@ async function request(path, payload) {
   });
 
   if (!response.ok) {
-    throw new Error(`Interview API request failed with status ${response.status}`);
+    const message = await response.text();
+    const error = new Error(message || `Interview API request failed with status ${response.status}`);
+    error.status = response.status;
+    throw error;
   }
 
   return response.json();
@@ -42,6 +45,15 @@ export async function updateTranscript(sessionId, transcript) {
   return request("/session/update", {
     session_id: sessionId,
     transcript,
+  });
+}
+
+export async function sendCandidateMessage({ sessionId, candidateMessage, currentCode = "", currentStage }) {
+  return request("/session/message", {
+    session_id: sessionId,
+    candidate_message: candidateMessage,
+    current_code: currentCode,
+    current_stage: currentStage,
   });
 }
 

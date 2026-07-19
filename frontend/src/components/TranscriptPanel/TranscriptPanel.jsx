@@ -9,6 +9,7 @@ export default function TranscriptPanel({
   onStart,
   onStop,
   segments,
+  voiceState,
 }) {
   return (
     <section className="glass-card overflow-hidden" aria-labelledby="transcript-heading">
@@ -18,7 +19,7 @@ export default function TranscriptPanel({
           <h2 id="transcript-heading" className="mt-1 text-base font-semibold text-white">Transcript</h2>
         </div>
         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${isRecording ? "bg-rose-400/10 text-rose-200" : "bg-slate-800 text-slate-400"}`}>
-          {isRecording ? "Recording" : "Idle"}
+          {voiceState}
         </span>
       </header>
 

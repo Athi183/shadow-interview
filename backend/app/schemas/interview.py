@@ -26,12 +26,16 @@ class MessageRequest(BaseModel):
     session_id: str = Field(min_length=1)
     candidate_message: str = Field(min_length=1)
     current_code: str | None = None
+    current_stage: InterviewStage | None = None
 
 
 class MessageResponse(BaseModel):
     session_id: str
     interview_stage: InterviewStage
+    current_stage: InterviewStage
     ai_response: str
+    timeline_event: str
+    timestamp: str
     observations: dict[str, bool | str]
     context: dict
     recent_events: list[dict[str, str]]

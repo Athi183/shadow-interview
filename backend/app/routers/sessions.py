@@ -72,6 +72,9 @@ def send_message(payload: MessageRequest) -> MessageResponse:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Candidate message cannot be empty.")
 
     session = _get_session_or_404(payload.session_id)
+    if payload.current_stage is not None:
+        session_manager.update_session(session=session, stage=payload.current_stage)
+
     event_payload = {
         "message": payload.candidate_message.strip(),
         "summary": payload.candidate_message.strip(),
@@ -96,7 +99,10 @@ def send_message(payload: MessageRequest) -> MessageResponse:
     return MessageResponse(
         session_id=session.session_id,
         interview_stage=session.interview_stage,
+        current_stage=session.interview_stage,
         ai_response=str(result["ai_response"]),
+        timeline_event=timeline_to_dicts(session)[-1]["label"] if session.timeline else "",
+        timestamp=timeline_to_dicts(session)[-1]["timestamp"] if session.timeline else "00:00",
         observations=result["observations"],
         context=result["context"],
         recent_events=recent_events_to_dicts(session),

@@ -16,6 +16,7 @@ import {
   transcriptSegments,
 } from "../../data/interviewData";
 import useInterviewProblem from "../../features/interview/hooks/useInterviewProblem";
+import useInterviewController from "../../features/interview/hooks/useInterviewController";
 import useSpeechRecognition from "../../features/interview/hooks/useSpeechRecognition";
 import { endInterviewSession, startInterviewSession, updateTranscript } from "../../services/interviewApi";
 
@@ -23,8 +24,15 @@ export default function InterviewPage() {
   const problem = useInterviewProblem();
   const navigate = useNavigate();
   const [sessionId, setSessionId] = useState("");
+  const [engineError, setEngineError] = useState("");
   const transcriptSyncTimer = useRef(null);
   const speech = useSpeechRecognition();
+  const interviewController = useInterviewController({
+    initialInterview: liveInterview,
+    initialStage: currentInterviewStage,
+    sessionId,
+    speech,
+  });
   const pageTitle = problem.isSelected ? `${problem.title} reasoning session` : "Interview workspace";
 
   useEffect(() => {
@@ -36,8 +44,14 @@ export default function InterviewPage() {
     }
 
     startInterviewSession(problem)
-      .then((session) => setSessionId(session.session_id))
-      .catch(() => setSessionId(""));
+      .then((session) => {
+        setEngineError("");
+        setSessionId(session.session_id);
+      })
+      .catch(() => {
+        setEngineError("Unable to contact Interview Engine.");
+        setSessionId("");
+      });
   }, [problem, sessionId]);
 
   useEffect(() => {
@@ -77,12 +91,12 @@ export default function InterviewPage() {
         <div className="grid gap-5 xl:grid-cols-[minmax(230px,0.7fr)_minmax(480px,1.45fr)_minmax(280px,0.85fr)]">
           <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
             <ProblemPanel problem={problem} />
-            <ProgressTracker stages={interviewStages} currentStage={currentInterviewStage} />
+            <ProgressTracker stages={interviewStages} currentStage={interviewController.currentStage} />
           </aside>
-          <LiveInterviewTimeline interview={liveInterview} />
+          <LiveInterviewTimeline interview={interviewController.interview} />
           <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
             <TranscriptPanel
-              error={speech.error}
+              error={speech.error || interviewController.error || engineError}
               isRecording={speech.isRecording}
               isSupported={speech.isSupported}
               liveTranscript={speech.transcript}
@@ -90,6 +104,7 @@ export default function InterviewPage() {
               onStart={speech.startRecording}
               onStop={speech.stopRecording}
               segments={transcriptSegments}
+              voiceState={interviewController.voiceState}
             />
             <InterviewTimeline events={timelineEvents} />
           </aside>

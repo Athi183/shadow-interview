@@ -8,8 +8,11 @@ function getSpeechRecognition() {
 
 export default function useSpeechRecognition() {
   const recognitionRef = useRef(null);
+  const committedTranscriptRef = useRef("");
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
+  const [finalTranscript, setFinalTranscript] = useState("");
+  const [finalResultId, setFinalResultId] = useState(0);
   const [error, setError] = useState("");
   const SpeechRecognition = useMemo(() => (typeof window === "undefined" ? null : getSpeechRecognition()), []);
   const isSupported = Boolean(SpeechRecognition);
@@ -26,11 +29,27 @@ export default function useSpeechRecognition() {
     recognition.lang = "en-US";
 
     recognition.onresult = (event) => {
-      const text = Array.from(event.results)
-        .map((result) => result[0]?.transcript || "")
-        .join(" ")
-        .trim();
-      setTranscript(text);
+      let interimText = "";
+      let finalText = "";
+
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        const text = result[0]?.transcript || "";
+        if (result.isFinal) {
+          finalText += text;
+        } else {
+          interimText += text;
+        }
+      }
+
+      if (finalText.trim()) {
+        const cleanFinalText = finalText.trim();
+        committedTranscriptRef.current = `${committedTranscriptRef.current} ${cleanFinalText}`.trim();
+        setFinalTranscript(cleanFinalText);
+        setFinalResultId((value) => value + 1);
+      }
+
+      setTranscript(`${committedTranscriptRef.current} ${interimText}`.trim());
     };
 
     recognition.onerror = (event) => {
@@ -57,13 +76,17 @@ export default function useSpeechRecognition() {
 
   function retryRecording() {
     stopRecording();
+    committedTranscriptRef.current = "";
     setTranscript("");
+    setFinalTranscript("");
     setError("");
     startRecording();
   }
 
   return {
     error,
+    finalResultId,
+    finalTranscript,
     isRecording,
     isSupported,
     transcript,

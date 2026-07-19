@@ -18,8 +18,10 @@ problem metadata and `sessionId`, then watches meaningful code edits with a
 2.5-second debounce.
 
 The React application owns the live interview UI. It uses the browser Web Speech
-API for recording controls, live transcript display, and transcript sync. It
-does not use external speech APIs.
+API for recording controls, live transcript display, transcript sync, and
+finalized speech detection. Finalized candidate speech is sent to
+`/session/message`; the returned AI response updates the timeline and is spoken
+with the browser SpeechSynthesis API. It does not use external speech APIs.
 
 The FastAPI backend owns the Interview Engine. Events flow through the Event
 Engine, state machine, reasoning analyzer, timeline, Context Builder, and GPT

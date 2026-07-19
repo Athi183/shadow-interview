@@ -54,7 +54,7 @@ export default function LiveInterviewTimeline({ interview }) {
           </div>
         </div>
         <span className="rounded-full bg-emerald-400/10 px-2.5 py-1 text-xs font-medium text-emerald-200">
-          {interview.currentStage}
+          {interview.voiceState}
         </span>
       </header>
 
@@ -67,7 +67,9 @@ export default function LiveInterviewTimeline({ interview }) {
         {interview.recentEvents.map((event) => <EventCard key={event.id} event={event} />)}
         <div ref={scrollEndRef} />
       </div>
-      <div className="border-t border-white/7 bg-slate-950/25 px-5 py-3 text-xs text-slate-500">Awaiting next interview signal.</div>
+      <div className="border-t border-white/7 bg-slate-950/25 px-5 py-3 text-xs text-slate-500">
+        Current stage: {interview.currentStage}
+      </div>
     </section>
   );
 }
