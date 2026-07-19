@@ -12,6 +12,7 @@ globalThis.ShadowInterview.panel = (() => {
     url: "shadow-interview-problem-url",
     status: "shadow-interview-status",
   };
+  const INTERVIEW_WORKSPACE_URL = "http://localhost:5173/interview";
 
   function createElement(tag, className, text) {
     const element = document.createElement(tag);
@@ -35,6 +36,14 @@ globalThis.ShadowInterview.panel = (() => {
     value.id = valueId;
     field.append(label, value);
     return field;
+  }
+
+  function buildInterviewWorkspaceUrl(problemData) {
+    const workspaceUrl = new URL(INTERVIEW_WORKSPACE_URL);
+    workspaceUrl.searchParams.set("title", problemData.title);
+    workspaceUrl.searchParams.set("difficulty", problemData.difficulty);
+    workspaceUrl.searchParams.set("problemUrl", problemData.url);
+    return workspaceUrl.toString();
   }
 
   function mount(getProblemData) {
@@ -129,7 +138,8 @@ globalThis.ShadowInterview.panel = (() => {
     launcher.addEventListener("click", () => setOpen(true));
     closeButton.addEventListener("click", () => setOpen(false));
     startButton.addEventListener("click", () => {
-      status.lastElementChild.textContent = "Interview connection is not enabled in Milestone 1";
+      const workspaceUrl = buildInterviewWorkspaceUrl(getProblemData());
+      window.open(workspaceUrl, "_blank", "noopener,noreferrer");
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && panel.classList.contains("si-panel-open")) setOpen(false);
