@@ -31,6 +31,8 @@ class EventEngine:
             self._session_manager.update_session(session, transcript=event.payload.get("transcript", ""))
         if event.event_type == InterviewEventType.CANDIDATE_MESSAGE and event.payload.get("current_code") is not None:
             self._session_manager.update_session(session, current_code=event.payload.get("current_code", ""))
+        if event.event_type == InterviewEventType.CANDIDATE_MESSAGE and event.payload.get("transcript") is not None:
+            self._session_manager.update_session(session, transcript=event.payload.get("transcript", ""))
         if event.event_type == InterviewEventType.INTERVIEW_COMPLETED:
             self._session_manager.end_session(session)
 

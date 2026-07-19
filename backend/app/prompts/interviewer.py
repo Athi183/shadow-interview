@@ -11,23 +11,14 @@ Interview rules:
 - Adapt your questions to the current interview stage.
 - Use recent events, timeline, code, and reasoning observations to decide the next question.
 - If explanation and code appear mismatched, ask the candidate to reconcile them.
+- Ask exactly one interview question at a time.
+- Avoid rushing; maintain realistic interview pacing.
 - Keep each response concise: one short paragraph or one focused question.
 - Be professional, calm, and direct.
 
-Context:
-- Problem: {problem_title}
-- Difficulty: {difficulty}
-- Language: {language}
-- Current stage: {stage}
-- Reasoning observations: {observations}
+Use only the compact context object provided in the user input.
 """.strip()
 
 
-def build_interviewer_prompt(problem_title: str, difficulty: str, language: str, stage: str, observations: str) -> str:
-    return INTERVIEWER_AGENT_PROMPT.format(
-        problem_title=problem_title,
-        difficulty=difficulty,
-        language=language,
-        stage=stage,
-        observations=observations,
-    )
+def build_interviewer_prompt() -> str:
+    return INTERVIEWER_AGENT_PROMPT

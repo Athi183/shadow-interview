@@ -94,6 +94,7 @@ def send_message(payload: MessageRequest) -> MessageResponse:
         interview_stage=session.interview_stage,
         ai_response=str(result["ai_response"]),
         observations=result["observations"],
+        context=result["context"],
         recent_events=recent_events_to_dicts(session),
         timeline=timeline_to_dicts(session),
     )
@@ -143,7 +144,7 @@ def receive_event(payload: InterviewEventRequest) -> InterviewEventResponse:
         payload=payload.payload,
     )
     try:
-        event_engine.receive(session, event)
+        result = event_engine.receive(session, event)
     except MissingOpenAIKeyError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc
     except GPTServiceError as exc:
@@ -152,6 +153,7 @@ def receive_event(payload: InterviewEventRequest) -> InterviewEventResponse:
         session_id=session.session_id,
         interview_stage=session.interview_stage,
         event_type=event.event_type,
+        context=result.get("context"),
         recent_events=recent_events_to_dicts(session),
         timeline=timeline_to_dicts(session),
     )

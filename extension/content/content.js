@@ -4,9 +4,10 @@
 globalThis.ShadowInterview = globalThis.ShadowInterview || {};
 
 function initializeShadowInterview() {
-  const { domParser, panel } = globalThis.ShadowInterview;
+  const { codeObserver, domParser, panel } = globalThis.ShadowInterview;
   if (!domParser || !panel) return;
   panel.mount(domParser.getProblemData);
+  codeObserver?.mount();
 }
 
 if (document.readyState === "loading") {

@@ -1,5 +1,5 @@
 // Responsibility: create the floating launcher and interview panel, and manage
-// local-only interactions. This module never communicates with a backend.
+// the local handoff from LeetCode into the Shadow Interview workspace.
 
 globalThis.ShadowInterview = globalThis.ShadowInterview || {};
 
@@ -13,6 +13,8 @@ globalThis.ShadowInterview.panel = (() => {
     status: "shadow-interview-status",
   };
   const INTERVIEW_WORKSPACE_URL = "http://localhost:5173/interview";
+  const INTERVIEW_API_URL = "http://localhost:8000";
+  const SESSION_STORAGE_KEY = "shadowInterview:sessionId";
 
   function createElement(tag, className, text) {
     const element = document.createElement(tag);
@@ -38,12 +40,37 @@ globalThis.ShadowInterview.panel = (() => {
     return field;
   }
 
-  function buildInterviewWorkspaceUrl(problemData) {
+  function buildInterviewWorkspaceUrl(problemData, sessionId = "") {
     const workspaceUrl = new URL(INTERVIEW_WORKSPACE_URL);
     workspaceUrl.searchParams.set("title", problemData.title);
     workspaceUrl.searchParams.set("difficulty", problemData.difficulty);
     workspaceUrl.searchParams.set("problemUrl", problemData.url);
+    if (sessionId) workspaceUrl.searchParams.set("sessionId", sessionId);
     return workspaceUrl.toString();
+  }
+
+  async function createInterviewSession(problemData) {
+    const response = await fetch(`${INTERVIEW_API_URL}/session/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        problem_title: problemData.title,
+        difficulty: problemData.difficulty,
+        problem_url: problemData.url,
+        language: "JavaScript",
+      }),
+    });
+
+    if (!response.ok) throw new Error("Unable to create interview session.");
+    return response.json();
+  }
+
+  function storeSessionId(sessionId) {
+    try {
+      window.localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+    } catch {
+      // Storage may be unavailable in hardened browser contexts.
+    }
   }
 
   function mount(getProblemData) {
@@ -68,7 +95,7 @@ globalThis.ShadowInterview.panel = (() => {
     const header = createElement("header", "si-header");
     const brand = createElement("div", "si-brand");
     brand.append(createIcon(), createElement("span", "", "Shadow Interview"));
-    const closeButton = createElement("button", "si-close", "×");
+    const closeButton = createElement("button", "si-close", "\u00d7");
     closeButton.type = "button";
     closeButton.title = "Close Shadow Interview";
     closeButton.setAttribute("aria-label", "Close Shadow Interview");
@@ -89,6 +116,10 @@ globalThis.ShadowInterview.panel = (() => {
     content.append(status, currentProblem, problemTitle, fields, startButton);
     panel.append(header, content);
     document.body.append(launcher, panel);
+
+    function setStatus(text) {
+      status.lastElementChild.textContent = text;
+    }
 
     function refreshProblemData() {
       const { title, difficulty, url } = getProblemData();
@@ -111,8 +142,6 @@ globalThis.ShadowInterview.panel = (() => {
       }
     }
 
-    // Restrict keyboard focus to the open dialog, preserving predictable Tab
-    // and Shift+Tab navigation without changing any focusable LeetCode UI.
     function trapFocus(event) {
       if (event.key !== "Tab" || !panel.classList.contains("si-panel-open")) return;
 
@@ -137,9 +166,22 @@ globalThis.ShadowInterview.panel = (() => {
 
     launcher.addEventListener("click", () => setOpen(true));
     closeButton.addEventListener("click", () => setOpen(false));
-    startButton.addEventListener("click", () => {
-      const workspaceUrl = buildInterviewWorkspaceUrl(getProblemData());
-      window.open(workspaceUrl, "_blank", "noopener,noreferrer");
+    startButton.addEventListener("click", async () => {
+      const problemData = getProblemData();
+      startButton.disabled = true;
+      setStatus("Creating session");
+
+      try {
+        const session = await createInterviewSession(problemData);
+        storeSessionId(session.session_id);
+        window.open(buildInterviewWorkspaceUrl(problemData, session.session_id), "_blank", "noopener,noreferrer");
+        setStatus("Session started");
+      } catch {
+        window.open(buildInterviewWorkspaceUrl(problemData), "_blank", "noopener,noreferrer");
+        setStatus("Workspace opened without backend session");
+      } finally {
+        startButton.disabled = false;
+      }
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && panel.classList.contains("si-panel-open")) setOpen(false);

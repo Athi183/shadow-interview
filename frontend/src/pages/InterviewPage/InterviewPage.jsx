@@ -1,5 +1,6 @@
 // Responsibility: compose the complete desktop-first interview workspace page.
 
+import { useEffect, useRef, useState } from "react";
 import Navbar from "../../components/Navbar/Navbar";
 import ProblemPanel from "../../components/ProblemPanel/ProblemPanel";
 import InterviewTimeline from "../../components/InterviewTimeline/InterviewTimeline";
@@ -14,10 +15,39 @@ import {
   transcriptSegments,
 } from "../../data/interviewData";
 import useInterviewProblem from "../../features/interview/hooks/useInterviewProblem";
+import useSpeechRecognition from "../../features/interview/hooks/useSpeechRecognition";
+import { startInterviewSession, updateTranscript } from "../../services/interviewApi";
 
 export default function InterviewPage() {
   const problem = useInterviewProblem();
+  const [sessionId, setSessionId] = useState("");
+  const transcriptSyncTimer = useRef(null);
+  const speech = useSpeechRecognition();
   const pageTitle = problem.isSelected ? `${problem.title} reasoning session` : "Interview workspace";
+
+  useEffect(() => {
+    if (!problem.isSelected || sessionId) return;
+
+    if (problem.sessionId) {
+      setSessionId(problem.sessionId);
+      return;
+    }
+
+    startInterviewSession(problem)
+      .then((session) => setSessionId(session.session_id))
+      .catch(() => setSessionId(""));
+  }, [problem, sessionId]);
+
+  useEffect(() => {
+    if (!sessionId || !speech.transcript) return;
+
+    window.clearTimeout(transcriptSyncTimer.current);
+    transcriptSyncTimer.current = window.setTimeout(() => {
+      updateTranscript(sessionId, speech.transcript).catch(() => undefined);
+    }, 1200);
+
+    return () => window.clearTimeout(transcriptSyncTimer.current);
+  }, [sessionId, speech.transcript]);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -39,7 +69,16 @@ export default function InterviewPage() {
           </aside>
           <LiveInterviewTimeline interview={liveInterview} />
           <aside className="space-y-5 xl:sticky xl:top-6 xl:self-start">
-            <TranscriptPanel segments={transcriptSegments} />
+            <TranscriptPanel
+              error={speech.error}
+              isRecording={speech.isRecording}
+              isSupported={speech.isSupported}
+              liveTranscript={speech.transcript}
+              onRetry={speech.retryRecording}
+              onStart={speech.startRecording}
+              onStop={speech.stopRecording}
+              segments={transcriptSegments}
+            />
             <InterviewTimeline events={timelineEvents} />
           </aside>
         </div>

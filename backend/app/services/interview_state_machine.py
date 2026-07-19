@@ -30,7 +30,7 @@ class InterviewStateMachine:
 
         if session.interview_stage == InterviewStage.INTRODUCTION:
             return InterviewStage.PROBLEM_UNDERSTANDING
-        if observations.get("candidate_changed_strategy"):
+        if observations.get("pattern_change"):
             return InterviewStage.INITIAL_APPROACH
         if observations.get("implementation_detail"):
             return InterviewStage.IMPLEMENTATION

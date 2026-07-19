@@ -33,6 +33,7 @@ class MessageResponse(BaseModel):
     interview_stage: InterviewStage
     ai_response: str
     observations: dict[str, bool | str]
+    context: dict
     recent_events: list[dict[str, str]]
     timeline: list[dict[str, str]]
 
@@ -63,6 +64,7 @@ class InterviewEventResponse(BaseModel):
     session_id: str
     interview_stage: InterviewStage
     event_type: InterviewEventType
+    context: dict | None = None
     recent_events: list[dict[str, str]]
     timeline: list[dict[str, str]]
 

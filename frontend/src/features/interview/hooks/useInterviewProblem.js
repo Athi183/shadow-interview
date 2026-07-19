@@ -17,6 +17,7 @@ export default function useInterviewProblem() {
     const title = readParam(searchParams, "title");
     const difficulty = readParam(searchParams, "difficulty");
     const problemUrl = readParam(searchParams, "problemUrl");
+    const sessionId = readParam(searchParams, "sessionId");
     const hasRequiredParams = REQUIRED_PARAMS.every((key) => readParam(searchParams, key));
 
     if (!hasRequiredParams) {
@@ -25,6 +26,7 @@ export default function useInterviewProblem() {
         title: "No problem selected.",
         difficulty: "Unknown",
         sourceUrl: "",
+        sessionId: "",
         tags: ["Awaiting LeetCode problem"],
         description: "Start an interview from the Chrome extension on a LeetCode problem page to load problem context here.",
       };
@@ -35,6 +37,7 @@ export default function useInterviewProblem() {
       title,
       difficulty,
       sourceUrl: problemUrl,
+      sessionId,
       tags: ["LeetCode", difficulty],
       description: "This interview workspace was launched from the detected LeetCode problem. Use the source link for the full statement while practicing your explanation here.",
     };
