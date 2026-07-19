@@ -40,4 +40,5 @@ def session_to_summary(session: InterviewSession) -> dict:
         "recent_events": recent_events_to_dicts(session),
         "timeline": timeline_to_dicts(session),
         "status": session.status,
+        "final_evaluation": session.final_evaluation,
     }

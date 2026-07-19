@@ -44,3 +44,24 @@ export async function updateTranscript(sessionId, transcript) {
     transcript,
   });
 }
+
+export async function fetchInterviewReport(sessionId) {
+  const response = await fetch(`${API_BASE_URL}/session/report/${sessionId}`);
+  if (!response.ok) {
+    throw new Error(`Interview report request failed with status ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function exportInterviewReport(sessionId, format) {
+  return request("/session/report/export", {
+    session_id: sessionId,
+    format,
+  });
+}
+
+export async function endInterviewSession(sessionId) {
+  return request("/session/end", {
+    session_id: sessionId,
+  });
+}

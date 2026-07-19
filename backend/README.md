@@ -3,10 +3,9 @@
 This directory contains the FastAPI Interview Engine. It manages in-memory
 interview sessions, receives interview events, tracks a finite-state workflow,
 records timeline entries, analyzes candidate reasoning, builds compact GPT
-context, and isolates OpenAI API communication inside `GPTService`.
+context, generates final evaluation reports, and isolates OpenAI API communication inside `GPTService`.
 
-The backend does not use a database, authentication, external speech APIs, or
-final scoring yet.
+The backend does not use a database, authentication, external speech APIs, or PDF export yet.
 
 ## Structure
 
@@ -20,6 +19,11 @@ final scoring yet.
 - `app/services/interview_orchestrator.py`: stage transitions and interviewer response orchestration.
 - `app/services/timeline_generator.py`: timeline event recording.
 - `app/services/gpt_service.py`: OpenAI SDK boundary.
+- `app/services/evaluation_engine.py`: final report pipeline coordinator.
+- `app/services/communication_analyzer.py`: communication scoring signals.
+- `app/services/code_analyzer.py`: code quality and complexity signals.
+- `app/services/recommendation_engine.py`: personalized growth plan.
+- `app/services/report_generator.py`: JSON and Markdown report shapes.
 - `app/prompts/`: reusable prompt templates.
 
 ## Environment
@@ -52,4 +56,6 @@ POST /session/update
 POST /session/message
 POST /session/event
 POST /session/end
+GET  /session/report/{session_id}
+POST /session/report/export
 ```

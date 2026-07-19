@@ -4,8 +4,11 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.schemas.interview import (
     EndSessionRequest,
+    ExportReportRequest,
+    ExportReportResponse,
     InterviewEventRequest,
     InterviewEventResponse,
+    InterviewReportResponse,
     MessageRequest,
     MessageResponse,
     SessionSummaryResponse,
@@ -17,6 +20,7 @@ from app.schemas.interview import (
 from app.models.interview_event import InterviewEvent, InterviewEventType
 from app.services.gpt_service import GPTServiceError, MissingOpenAIKeyError
 from app.services.event_engine import event_engine
+from app.services.evaluation_engine import evaluation_engine
 from app.services.session_manager import session_manager
 from app.utils.session_mapper import recent_events_to_dicts, session_to_summary, timeline_to_dicts
 
@@ -171,4 +175,29 @@ def end_session(payload: EndSessionRequest) -> SessionSummaryResponse:
         ),
     )
     ended_session = session
+    evaluation_engine.evaluate(ended_session)
     return SessionSummaryResponse(**session_to_summary(ended_session))
+
+
+@router.get("/report/{session_id}", response_model=InterviewReportResponse)
+def get_report(session_id: str) -> InterviewReportResponse:
+    session = _get_session_or_404(session_id)
+    report = session.final_evaluation or evaluation_engine.evaluate(session)
+    return InterviewReportResponse(session_id=session.session_id, report=report)
+
+
+@router.post("/report/export", response_model=ExportReportResponse)
+def export_report(payload: ExportReportRequest) -> ExportReportResponse:
+    session = _get_session_or_404(payload.session_id)
+    report = session.final_evaluation or evaluation_engine.evaluate(session)
+    export_format = payload.format.lower()
+    if export_format == "json":
+        import json
+
+        content = json.dumps(report, indent=2)
+    elif export_format == "markdown":
+        content = evaluation_engine.export_markdown(report)
+    else:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Supported export formats are markdown and json.")
+
+    return ExportReportResponse(session_id=session.session_id, format=export_format, content=content)

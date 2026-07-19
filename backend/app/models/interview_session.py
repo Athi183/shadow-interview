@@ -60,6 +60,7 @@ class InterviewSession:
     events: list[InterviewEvent]
     timeline: list[TimelineEvent]
     status: InterviewStatus
+    final_evaluation: dict | None
 
     @classmethod
     def create(cls, problem_title: str, difficulty: str, problem_url: str, language: str) -> "InterviewSession":
@@ -84,6 +85,7 @@ class InterviewSession:
             events=[],
             timeline=[],
             status=InterviewStatus.ACTIVE,
+            final_evaluation=None,
         )
 
     def sync_stage(self, stage: InterviewStage) -> None:

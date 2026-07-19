@@ -4,9 +4,9 @@ This Vite + React application is the primary Shadow Interview UI. The Chrome
 extension launches `/interview` with LeetCode problem metadata and, when
 available, a backend `sessionId`.
 
-Milestone 6 adds browser-native voice controls through the Web Speech API and
-syncs live transcript updates to the local FastAPI backend. No external speech
-API, authentication, persistence, or final scoring is implemented.
+The workspace includes browser-native voice controls through the Web Speech API,
+live transcript sync, and a final evaluation dashboard with report export. No
+external speech API, authentication, persistence, or PDF export is implemented.
 
 ## Architecture
 
@@ -16,6 +16,11 @@ API, authentication, persistence, or final scoring is implemented.
 - `src/services/interviewApi.js` centralizes local FastAPI calls.
 - `src/data/interviewData.js` keeps static presentation data out of components.
 - `src/styles/globals.css` defines Tailwind imports and shared design utilities.
+
+Routes:
+
+- `/interview`: live interview workspace.
+- `/evaluation`: final interview report dashboard.
 
 ## Run locally
 

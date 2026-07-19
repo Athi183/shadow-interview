@@ -1,6 +1,7 @@
 // Responsibility: compose the complete desktop-first interview workspace page.
 
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/Navbar/Navbar";
 import ProblemPanel from "../../components/ProblemPanel/ProblemPanel";
 import InterviewTimeline from "../../components/InterviewTimeline/InterviewTimeline";
@@ -16,10 +17,11 @@ import {
 } from "../../data/interviewData";
 import useInterviewProblem from "../../features/interview/hooks/useInterviewProblem";
 import useSpeechRecognition from "../../features/interview/hooks/useSpeechRecognition";
-import { startInterviewSession, updateTranscript } from "../../services/interviewApi";
+import { endInterviewSession, startInterviewSession, updateTranscript } from "../../services/interviewApi";
 
 export default function InterviewPage() {
   const problem = useInterviewProblem();
+  const navigate = useNavigate();
   const [sessionId, setSessionId] = useState("");
   const transcriptSyncTimer = useRef(null);
   const speech = useSpeechRecognition();
@@ -48,6 +50,16 @@ export default function InterviewPage() {
 
     return () => window.clearTimeout(transcriptSyncTimer.current);
   }, [sessionId, speech.transcript]);
+
+  async function finishInterview() {
+    if (!sessionId) {
+      navigate("/evaluation");
+      return;
+    }
+
+    await endInterviewSession(sessionId).catch(() => undefined);
+    navigate(`/evaluation?sessionId=${encodeURIComponent(sessionId)}`);
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -85,6 +97,7 @@ export default function InterviewPage() {
         <div className="mt-7 flex justify-end border-t border-white/7 pt-6">
           <button
             type="button"
+            onClick={finishInterview}
             className="w-full rounded-xl border border-rose-300/20 bg-rose-400/10 px-5 py-3.5 text-sm font-semibold text-rose-100 transition hover:bg-rose-400/18 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-rose-300 sm:w-auto"
           >
             Finish Interview

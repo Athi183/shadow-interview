@@ -9,7 +9,7 @@ LeetCode
   -> Interview Engine (FastAPI)
   -> Event Engine
   -> Context Builder
-  -> GPTService
+  -> GPTService / Evaluation Pipeline
 ```
 
 The extension remains a lightweight LeetCode companion. It detects the active
@@ -23,7 +23,8 @@ does not use external speech APIs.
 
 The FastAPI backend owns the Interview Engine. Events flow through the Event
 Engine, state machine, reasoning analyzer, timeline, Context Builder, and GPT
-boundary.
+boundary. When the interview ends, the Evaluation Pipeline generates the final
+structured report and personalized growth plan.
 
 ## Backend event flow
 
@@ -67,7 +68,22 @@ recent timeline events.
 
 ## Deferred work
 
-- Final scoring and report generation
 - Authentication
 - Persistence or database storage
 - External speech-to-text providers
+- PDF export
+
+## Evaluation pipeline
+
+```text
+EvaluationEngine
+  -> CommunicationAnalyzer
+  -> ReasoningAnalyzer
+  -> CodeAnalyzer
+  -> RecommendationEngine
+  -> ReportGenerator
+```
+
+The report includes overall score, interview readiness, skill scores,
+strengths, weaknesses, key observations, recommendations, next problems, and a
+4-week roadmap.

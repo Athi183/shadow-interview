@@ -73,6 +73,11 @@ class EndSessionRequest(BaseModel):
     session_id: str = Field(min_length=1)
 
 
+class ExportReportRequest(BaseModel):
+    session_id: str = Field(min_length=1)
+    format: str = "markdown"
+
+
 class ConversationMessageResponse(BaseModel):
     role: str
     content: str
@@ -100,3 +105,15 @@ class SessionSummaryResponse(BaseModel):
     recent_events: list[dict[str, str]]
     timeline: list[dict[str, str]]
     status: InterviewStatus
+    final_evaluation: dict | None = None
+
+
+class InterviewReportResponse(BaseModel):
+    session_id: str
+    report: dict
+
+
+class ExportReportResponse(BaseModel):
+    session_id: str
+    format: str
+    content: str
