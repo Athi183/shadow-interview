@@ -61,7 +61,7 @@ globalThis.ShadowInterview.codeObserver = (() => {
     const sessionId = getSessionId();
     if (!sessionId) return;
 
-    await fetch(`${API_BASE_URL}/session/update`, {
+    const response = await fetch(`${API_BASE_URL}/session/update`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -69,6 +69,10 @@ globalThis.ShadowInterview.codeObserver = (() => {
         current_code: snapshot,
       }),
     });
+
+    if (response.status === 404) {
+      window.localStorage.removeItem(SESSION_STORAGE_KEY);
+    }
   }
 
   function scheduleSnapshot() {

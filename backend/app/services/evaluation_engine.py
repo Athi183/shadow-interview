@@ -69,8 +69,10 @@ class EvaluationEngine:
                 instructions=EVALUATION_AGENT_PROMPT,
                 user_input=json.dumps(draft, default=str),
             )
-        except (MissingOpenAIKeyError, GPTServiceError):
+        except MissingOpenAIKeyError:
             return "Evaluation generated locally. Add OPENAI_API_KEY for GPT-written coaching feedback."
+        except GPTServiceError:
+            return "Evaluation generated locally because GPT feedback is unavailable. Check OpenAI billing, quota, model access, or backend logs."
 
     def _technical_score(self, code: dict, reasoning: dict[str, bool | str]) -> int:
         base = round((code["code_quality"] + code["complexity_analysis"]) / 2)

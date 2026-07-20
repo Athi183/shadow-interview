@@ -15,11 +15,16 @@ globalThis.ShadowInterview.panel = (() => {
   const INTERVIEW_WORKSPACE_URL = "http://localhost:5173/evaluation";
   const INTERVIEW_API_URL = "http://localhost:8000";
   const SESSION_STORAGE_KEY = "shadowInterview:sessionId";
+  const SPEECH_SILENCE_MS = 1800;
 
   let sessionId = "";
   let isInterviewActive = false;
   let recognition = null;
-  let finalTranscript = "";
+  let fullTranscript = "";
+  let pendingTranscript = "";
+  let interimTranscript = "";
+  let lastSentTranscript = "";
+  let speechSilenceTimer = null;
 
   function createElement(tag, className, text) {
     const element = document.createElement(tag);
@@ -115,9 +120,13 @@ globalThis.ShadowInterview.panel = (() => {
   }
 
   function interviewErrorMessage(error) {
+    const details = error.message || "";
     if (error.status === 0) return "Unable to contact Interview Engine. Start FastAPI on localhost:8000.";
     if (error.status === 503) return "OpenAI API key is missing. Set OPENAI_API_KEY in the backend terminal and restart FastAPI.";
-    if (error.status === 502) return "OpenAI could not generate a response. Check your model/key, then try again.";
+    if (error.status === 502 && /quota|insufficient_quota|billing/i.test(details)) {
+      return "OpenAI quota is exhausted. Check your API billing/quota, then try again.";
+    }
+    if (error.status === 502) return "OpenAI could not generate a response. Check your model, key, billing, or backend logs.";
     return "The Interview Engine could not respond. Check the backend terminal for details.";
   }
 
@@ -166,10 +175,19 @@ globalThis.ShadowInterview.panel = (() => {
     aiBox.append(createElement("p", "si-section-label", "Interviewer"), createElement("p", "si-live-text", "Click Start Interview and explain your approach aloud."));
     liveArea.append(transcriptBox, aiBox);
 
+    const manualInput = createElement("textarea", "si-manual-input");
+    manualInput.placeholder = "If speech recognition stalls, type your thought here and send it to the interviewer.";
+    manualInput.rows = 3;
+    manualInput.setAttribute("aria-label", "Manual candidate response");
+    const manualSendButton = createElement("button", "si-send", "Send to Interviewer");
+    manualSendButton.type = "button";
+    const manualControls = createElement("div", "si-manual-controls");
+    manualControls.append(manualInput, manualSendButton);
+
     const startButton = createElement("button", "si-start", "Start Interview");
     startButton.type = "button";
     startButton.setAttribute("aria-describedby", IDS.status);
-    content.append(status, currentProblem, problemTitle, fields, liveArea, startButton);
+    content.append(status, currentProblem, problemTitle, fields, liveArea, manualControls, startButton);
     panel.append(header, content);
     document.body.append(launcher, panel);
 
@@ -221,6 +239,32 @@ globalThis.ShadowInterview.panel = (() => {
       }
     }
 
+    function resetSpeechBuffers() {
+      fullTranscript = "";
+      pendingTranscript = "";
+      interimTranscript = "";
+      lastSentTranscript = "";
+      window.clearTimeout(speechSilenceTimer);
+    }
+
+    function readableTranscript() {
+      return [fullTranscript, pendingTranscript, interimTranscript].filter(Boolean).join(" ").trim();
+    }
+
+    function scheduleSpeechSend() {
+      window.clearTimeout(speechSilenceTimer);
+      speechSilenceTimer = window.setTimeout(() => {
+        const candidateMessage = (pendingTranscript || interimTranscript).trim();
+        if (!candidateMessage || candidateMessage === lastSentTranscript) return;
+
+        lastSentTranscript = candidateMessage;
+        fullTranscript = `${fullTranscript} ${candidateMessage}`.trim();
+        pendingTranscript = "";
+        interimTranscript = "";
+        sendCandidateMessage(candidateMessage);
+      }, SPEECH_SILENCE_MS);
+    }
+
     function startListening() {
       const SpeechRecognition = getSpeechRecognition();
       if (!SpeechRecognition) {
@@ -244,11 +288,13 @@ globalThis.ShadowInterview.panel = (() => {
           else interimText += text;
         }
 
-        if (interimText.trim()) transcriptText.textContent = `${finalTranscript} ${interimText}`.trim();
+        if (interimText.trim()) interimTranscript = interimText.trim();
         if (finalText.trim()) {
-          finalTranscript = `${finalTranscript} ${finalText}`.trim();
-          sendCandidateMessage(finalText.trim());
+          pendingTranscript = `${pendingTranscript} ${finalText}`.trim();
+          interimTranscript = "";
         }
+        if (readableTranscript()) transcriptText.textContent = readableTranscript();
+        if (finalText.trim() || interimText.trim()) scheduleSpeechSend();
       };
       recognition.onerror = () => {
         aiText.textContent = "I lost microphone access. Click Stop Interview, then start again.";
@@ -275,7 +321,7 @@ globalThis.ShadowInterview.panel = (() => {
         const session = await createInterviewSession(problemData);
         storeSessionId(session.session_id);
         isInterviewActive = true;
-        finalTranscript = "";
+        resetSpeechBuffers();
         startButton.textContent = "Stop Interview";
         aiText.textContent = "I'm listening. Start by explaining your first approach before writing code.";
         startListening();
@@ -291,6 +337,7 @@ globalThis.ShadowInterview.panel = (() => {
       isInterviewActive = false;
       startButton.disabled = true;
       setStatus("Ending interview");
+      window.clearTimeout(speechSilenceTimer);
       recognition?.stop();
       window.speechSynthesis?.cancel();
       try {
@@ -332,6 +379,18 @@ globalThis.ShadowInterview.panel = (() => {
     startButton.addEventListener("click", () => {
       if (isInterviewActive) stopInterview();
       else startInterview();
+    });
+    manualSendButton.addEventListener("click", () => {
+      const message = manualInput.value.trim();
+      if (!message) return;
+      manualInput.value = "";
+      sendCandidateMessage(message);
+    });
+    manualInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        manualSendButton.click();
+      }
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && panel.classList.contains("si-panel-open")) setOpen(false);
