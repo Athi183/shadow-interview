@@ -1,5 +1,5 @@
-// Responsibility: create the floating launcher and interview panel, and manage
-// the local handoff from LeetCode into the Shadow Interview workspace.
+// Responsibility: create the floating launcher, run the live interview on
+// LeetCode, and open the React report/workspace only after the interview stops.
 
 globalThis.ShadowInterview = globalThis.ShadowInterview || {};
 
@@ -12,9 +12,14 @@ globalThis.ShadowInterview.panel = (() => {
     url: "shadow-interview-problem-url",
     status: "shadow-interview-status",
   };
-  const INTERVIEW_WORKSPACE_URL = "http://localhost:5173/interview";
+  const INTERVIEW_WORKSPACE_URL = "http://localhost:5173/evaluation";
   const INTERVIEW_API_URL = "http://localhost:8000";
   const SESSION_STORAGE_KEY = "shadowInterview:sessionId";
+
+  let sessionId = "";
+  let isInterviewActive = false;
+  let recognition = null;
+  let finalTranscript = "";
 
   function createElement(tag, className, text) {
     const element = document.createElement(tag);
@@ -40,7 +45,7 @@ globalThis.ShadowInterview.panel = (() => {
     return field;
   }
 
-  function buildInterviewWorkspaceUrl(problemData, sessionId = "") {
+  function buildReportUrl(problemData) {
     const workspaceUrl = new URL(INTERVIEW_WORKSPACE_URL);
     workspaceUrl.searchParams.set("title", problemData.title);
     workspaceUrl.searchParams.set("difficulty", problemData.difficulty);
@@ -49,28 +54,51 @@ globalThis.ShadowInterview.panel = (() => {
     return workspaceUrl.toString();
   }
 
-  async function createInterviewSession(problemData) {
-    const response = await fetch(`${INTERVIEW_API_URL}/session/start`, {
+  async function request(path, payload) {
+    const response = await fetch(`${INTERVIEW_API_URL}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        problem_title: problemData.title,
-        difficulty: problemData.difficulty,
-        problem_url: problemData.url,
-        language: "JavaScript",
-      }),
+      body: JSON.stringify(payload),
     });
-
-    if (!response.ok) throw new Error("Unable to create interview session.");
+    if (!response.ok) throw new Error(`Interview Engine returned ${response.status}`);
     return response.json();
   }
 
-  function storeSessionId(sessionId) {
+  async function createInterviewSession(problemData) {
+    return request("/session/start", {
+      problem_title: problemData.title,
+      difficulty: problemData.difficulty,
+      problem_url: problemData.url,
+      language: "JavaScript",
+    });
+  }
+
+  function storeSessionId(nextSessionId) {
+    sessionId = nextSessionId;
     try {
-      window.localStorage.setItem(SESSION_STORAGE_KEY, sessionId);
+      window.localStorage.setItem(SESSION_STORAGE_KEY, nextSessionId);
     } catch {
       // Storage may be unavailable in hardened browser contexts.
     }
+  }
+
+  function getSpeechRecognition() {
+    return window.SpeechRecognition || window.webkitSpeechRecognition;
+  }
+
+  function speak(text, setStatus) {
+    if (!window.speechSynthesis || !text) {
+      setStatus("Listening");
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.onstart = () => setStatus("AI Speaking");
+    utterance.onend = () => setStatus(isInterviewActive ? "Listening" : "Ready");
+    utterance.onerror = () => setStatus(isInterviewActive ? "Listening" : "Ready");
+    window.speechSynthesis.speak(utterance);
   }
 
   function mount(getProblemData) {
@@ -110,12 +138,23 @@ globalThis.ShadowInterview.panel = (() => {
     problemTitle.id = IDS.title;
     const fields = createElement("div", "si-fields");
     fields.append(createField("Difficulty", IDS.difficulty), createField("URL", IDS.url));
+
+    const liveArea = createElement("div", "si-live-area");
+    const transcriptBox = createElement("div", "si-live-card");
+    transcriptBox.append(createElement("p", "si-section-label", "You said"), createElement("p", "si-live-text", "Your final spoken answer will appear here."));
+    const aiBox = createElement("div", "si-live-card si-live-card-accent");
+    aiBox.append(createElement("p", "si-section-label", "Interviewer"), createElement("p", "si-live-text", "Click Start Interview and explain your approach aloud."));
+    liveArea.append(transcriptBox, aiBox);
+
     const startButton = createElement("button", "si-start", "Start Interview");
     startButton.type = "button";
     startButton.setAttribute("aria-describedby", IDS.status);
-    content.append(status, currentProblem, problemTitle, fields, startButton);
+    content.append(status, currentProblem, problemTitle, fields, liveArea, startButton);
     panel.append(header, content);
     document.body.append(launcher, panel);
+
+    const transcriptText = transcriptBox.querySelector(".si-live-text");
+    const aiText = aiBox.querySelector(".si-live-text");
 
     function setStatus(text) {
       status.lastElementChild.textContent = text;
@@ -139,6 +178,110 @@ globalThis.ShadowInterview.panel = (() => {
         closeButton.focus();
       } else {
         launcher.focus();
+      }
+    }
+
+    async function sendCandidateMessage(candidateMessage) {
+      if (!sessionId || !candidateMessage.trim()) return;
+
+      setStatus("Processing");
+      transcriptText.textContent = candidateMessage;
+      try {
+        const currentCode = globalThis.ShadowInterview.codeObserver?.getCurrentCode?.() || "";
+        const response = await request("/session/message", {
+          session_id: sessionId,
+          candidate_message: candidateMessage,
+          current_code: currentCode,
+        });
+        aiText.textContent = response.ai_response;
+        speak(response.ai_response, setStatus);
+      } catch {
+        aiText.textContent = "I could not reach the Interview Engine. Please check the backend and OpenAI key, then try again.";
+        setStatus("Ready");
+      }
+    }
+
+    function startListening() {
+      const SpeechRecognition = getSpeechRecognition();
+      if (!SpeechRecognition) {
+        aiText.textContent = "Speech recognition is not available in this browser.";
+        setStatus("Ready");
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+      recognition.onresult = (event) => {
+        let interimText = "";
+        let finalText = "";
+
+        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+          const result = event.results[index];
+          const text = result[0]?.transcript || "";
+          if (result.isFinal) finalText += text;
+          else interimText += text;
+        }
+
+        if (interimText.trim()) transcriptText.textContent = `${finalTranscript} ${interimText}`.trim();
+        if (finalText.trim()) {
+          finalTranscript = `${finalTranscript} ${finalText}`.trim();
+          sendCandidateMessage(finalText.trim());
+        }
+      };
+      recognition.onerror = () => {
+        aiText.textContent = "I lost microphone access. Click Stop Interview, then start again.";
+        setStatus("Ready");
+      };
+      recognition.onend = () => {
+        if (isInterviewActive) {
+          try {
+            recognition.start();
+          } catch {
+            setStatus("Ready");
+          }
+        }
+      };
+      recognition.start();
+      setStatus("Listening");
+    }
+
+    async function startInterview() {
+      const problemData = getProblemData();
+      startButton.disabled = true;
+      setStatus("Creating session");
+      try {
+        const session = await createInterviewSession(problemData);
+        storeSessionId(session.session_id);
+        isInterviewActive = true;
+        finalTranscript = "";
+        startButton.textContent = "Stop Interview";
+        aiText.textContent = "I'm listening. Start by explaining your first approach before writing code.";
+        startListening();
+      } catch {
+        aiText.textContent = "Unable to contact Interview Engine. Start the FastAPI backend, then try again.";
+        setStatus("Ready");
+      } finally {
+        startButton.disabled = false;
+      }
+    }
+
+    async function stopInterview() {
+      isInterviewActive = false;
+      startButton.disabled = true;
+      setStatus("Ending interview");
+      recognition?.stop();
+      window.speechSynthesis?.cancel();
+      try {
+        if (sessionId) await request("/session/end", { session_id: sessionId });
+      } catch {
+        // The report page can still open and show fallback state if the backend is down.
+      } finally {
+        startButton.textContent = "Start Interview";
+        startButton.disabled = false;
+        setStatus("Ready");
+        window.open(buildReportUrl(getProblemData()), "_blank", "noopener,noreferrer");
       }
     }
 
@@ -166,22 +309,9 @@ globalThis.ShadowInterview.panel = (() => {
 
     launcher.addEventListener("click", () => setOpen(true));
     closeButton.addEventListener("click", () => setOpen(false));
-    startButton.addEventListener("click", async () => {
-      const problemData = getProblemData();
-      startButton.disabled = true;
-      setStatus("Creating session");
-
-      try {
-        const session = await createInterviewSession(problemData);
-        storeSessionId(session.session_id);
-        window.open(buildInterviewWorkspaceUrl(problemData, session.session_id), "_blank", "noopener,noreferrer");
-        setStatus("Session started");
-      } catch {
-        window.open(buildInterviewWorkspaceUrl(problemData), "_blank", "noopener,noreferrer");
-        setStatus("Workspace opened without backend session");
-      } finally {
-        startButton.disabled = false;
-      }
+    startButton.addEventListener("click", () => {
+      if (isInterviewActive) stopInterview();
+      else startInterview();
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && panel.classList.contains("si-panel-open")) setOpen(false);

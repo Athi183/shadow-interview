@@ -98,5 +98,5 @@ globalThis.ShadowInterview.codeObserver = (() => {
     observer.observe(editor, { childList: true, characterData: true, subtree: true });
   }
 
-  return { mount: mountWhenEditorIsReady };
+  return { getCurrentCode: getEditorText, mount: mountWhenEditorIsReady };
 })();
