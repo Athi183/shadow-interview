@@ -1,6 +1,14 @@
 // Responsibility: provide a local dashboard fallback until live reports load.
 
 export const fallbackEvaluationReport = {
+  problem: {
+    title: "No completed interview loaded",
+    difficulty: "Unknown",
+    url: "",
+    language: "JavaScript",
+  },
+  timeline: [],
+  interviewer_questions: [],
   overall_score: 78,
   interview_readiness: 74,
   scores: {
@@ -27,6 +35,7 @@ export const fallbackEvaluationReport = {
     "Implementation quality is promising but needs final polish.",
   ],
   recommendations: {
+    problem_focus: "general data structures",
     leetcode_patterns: ["Hash Map Lookup", "Two Pointers", "Sliding Window", "Prefix Sum"],
     topics: ["Complexity analysis", "Edge cases", "Clean implementation practice"],
     difficulty_progression: "Easy timed drills -> Medium pattern recognition -> Medium mock interviews",

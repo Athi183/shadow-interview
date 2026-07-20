@@ -1,13 +1,28 @@
 """Generates structured report payloads and export formats."""
 
+from app.models.interview_session import InterviewSession
+
 
 class ReportGenerator:
-    def generate(self, session_id: str, scores: dict[str, int], sections: dict, recommendations: dict, gpt_feedback: str) -> dict:
+    def generate(self, session: InterviewSession, scores: dict[str, int], sections: dict, recommendations: dict, gpt_feedback: str) -> dict:
         overall_score = round(sum(scores.values()) / len(scores))
         readiness = min(100, max(0, round((overall_score * 0.72) + (scores["communication"] * 0.18) + (scores["optimization"] * 0.1))))
+        interviewer_questions = [
+            message.content
+            for message in session.conversation_history
+            if message.role == "assistant"
+        ]
 
         return {
-            "session_id": session_id,
+            "session_id": session.session_id,
+            "problem": {
+                "title": session.problem_title,
+                "difficulty": session.difficulty,
+                "url": session.problem_url,
+                "language": session.language,
+            },
+            "timeline": [event.__dict__ for event in session.timeline],
+            "interviewer_questions": interviewer_questions,
             "overall_score": overall_score,
             "interview_readiness": readiness,
             "scores": scores,
@@ -32,6 +47,7 @@ class ReportGenerator:
                 "",
                 f"Overall Score: {report['overall_score']}/100",
                 f"Interview Readiness: {report['interview_readiness']}%",
+                f"Problem: {report.get('problem', {}).get('title', 'Unknown problem')}",
                 "",
                 "## Scores",
                 scores,

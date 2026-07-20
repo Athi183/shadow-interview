@@ -11,6 +11,7 @@ globalThis.ShadowInterview.panel = (() => {
     difficulty: "shadow-interview-problem-difficulty",
     url: "shadow-interview-problem-url",
     status: "shadow-interview-status",
+    trailCount: "shadow-interview-trail-count",
   };
   const INTERVIEW_WORKSPACE_URL = "http://localhost:5173/evaluation";
   const INTERVIEW_API_URL = "http://localhost:8000";
@@ -30,6 +31,7 @@ globalThis.ShadowInterview.panel = (() => {
   let voiceMonitorId = null;
   let mediaRecorder = null;
   let audioChunks = [];
+  let coveredItems = [];
   let recordingStartedAt = 0;
   let silenceStartedAt = 0;
   let pendingTranscript = "";
@@ -177,6 +179,10 @@ globalThis.ShadowInterview.panel = (() => {
     launcher.setAttribute("aria-label", "Open Shadow Interview");
     launcher.setAttribute("aria-expanded", "false");
     launcher.append(createIcon());
+    const launcherBadge = createElement("span", "si-launcher-badge", "0");
+    launcherBadge.id = IDS.trailCount;
+    launcherBadge.setAttribute("aria-label", "Covered interview items");
+    launcher.append(launcherBadge);
 
     const panel = createElement("aside", "si-panel");
     panel.id = IDS.panel;
@@ -212,6 +218,13 @@ globalThis.ShadowInterview.panel = (() => {
     aiBox.append(createElement("p", "si-section-label", "Interviewer"), createElement("p", "si-live-text", "Click Start Interview and explain your approach aloud."));
     liveArea.append(transcriptBox, aiBox);
 
+    const trailBox = createElement("div", "si-trail-card");
+    const trailHeader = createElement("div", "si-trail-header");
+    trailHeader.append(createElement("p", "si-section-label", "Covered so far"), createElement("span", "si-trail-pill", "0"));
+    const trailList = createElement("ul", "si-trail-list");
+    trailList.append(createElement("li", "si-trail-empty", "Interview questions and key events will appear here."));
+    trailBox.append(trailHeader, trailList);
+
     const manualInput = createElement("textarea", "si-manual-input");
     manualInput.placeholder = "If speech recognition stalls, type your thought here and send it to the interviewer.";
     manualInput.rows = 3;
@@ -224,12 +237,13 @@ globalThis.ShadowInterview.panel = (() => {
     const startButton = createElement("button", "si-start", "Start Interview");
     startButton.type = "button";
     startButton.setAttribute("aria-describedby", IDS.status);
-    content.append(status, currentProblem, problemTitle, fields, liveArea, manualControls, startButton);
+    content.append(status, currentProblem, problemTitle, fields, liveArea, trailBox, manualControls, startButton);
     panel.append(header, content);
     document.body.append(launcher, panel);
 
     const transcriptText = transcriptBox.querySelector(".si-live-text");
     const aiText = aiBox.querySelector(".si-live-text");
+    const trailPill = trailBox.querySelector(".si-trail-pill");
 
     function setStatus(text) {
       status.lastElementChild.textContent = text;
@@ -254,6 +268,38 @@ globalThis.ShadowInterview.panel = (() => {
       } else {
         launcher.focus();
       }
+    }
+
+    function updateCoveredItems(nextTimeline = []) {
+      const usefulItems = nextTimeline
+        .filter((event) => ["AI Response", "Candidate Message", "Stage Transition"].includes(event.label))
+        .map((event) => ({
+          label: event.label,
+          detail: event.detail,
+          timestamp: event.timestamp,
+        }));
+
+      if (usefulItems.length) coveredItems = usefulItems.slice(-6);
+
+      trailList.innerHTML = "";
+      if (!coveredItems.length) {
+        trailList.append(createElement("li", "si-trail-empty", "Interview questions and key events will appear here."));
+      } else {
+        coveredItems.forEach((item) => {
+          const listItem = createElement("li", "si-trail-item");
+          const icon = item.label === "AI Response" ? "🎤" : item.label === "Candidate Message" ? "🗣️" : "↗";
+          listItem.append(
+            createElement("span", "si-trail-icon", icon),
+            createElement("span", "si-trail-copy", `${item.timestamp} · ${item.detail}`),
+          );
+          trailList.append(listItem);
+        });
+      }
+
+      const count = String(coveredItems.length);
+      trailPill.textContent = count;
+      launcherBadge.textContent = count;
+      launcherBadge.classList.toggle("si-launcher-badge-visible", coveredItems.length > 0);
     }
 
     function pauseRecognitionForInterviewer() {
@@ -300,6 +346,7 @@ globalThis.ShadowInterview.panel = (() => {
           current_code: currentCode,
         });
         aiText.textContent = response.ai_response;
+        updateCoveredItems(response.timeline);
         speak(response.ai_response, setStatus, resumeRecognitionAfterInterviewer);
       } catch (error) {
         aiText.textContent = interviewErrorMessage(error);
@@ -532,6 +579,8 @@ globalThis.ShadowInterview.panel = (() => {
         storeSessionId(session.session_id);
         isInterviewActive = true;
         isRecognitionPausedForSpeech = false;
+        coveredItems = [];
+        updateCoveredItems([]);
         resetSpeechBuffers();
         startButton.textContent = "Stop Interview";
         aiText.textContent = "I'm listening. Start by explaining your first approach before writing code.";

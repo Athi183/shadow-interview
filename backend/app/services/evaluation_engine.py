@@ -48,15 +48,20 @@ class EvaluationEngine:
             "complexity_analysis": code["complexity_analysis"],
             "edge_case_awareness": code["edge_case_awareness"],
         }
-        recommendations = self._recommendation_engine.generate(scores)
+        recommendations = self._recommendation_engine.generate(scores, session)
         sections = self._sections(communication, code, reasoning, session)
         draft = {
+            "problem": {
+                "title": session.problem_title,
+                "difficulty": session.difficulty,
+                "url": session.problem_url,
+            },
             "scores": scores,
             "sections": sections,
             "recommendations": recommendations,
         }
         gpt_feedback = self._generate_gpt_feedback(draft)
-        report = self._report_generator.generate(session.session_id, scores, sections, recommendations, gpt_feedback)
+        report = self._report_generator.generate(session, scores, sections, recommendations, gpt_feedback)
         session.final_evaluation = report
         return report
 
