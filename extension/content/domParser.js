@@ -45,9 +45,20 @@ globalThis.ShadowInterview.domParser = (() => {
     return "Not detected";
   }
 
+  function titleFromUrl() {
+    const problemSlug = window.location.pathname.match(/\/problems\/([^/]+)/)?.[1];
+    if (!problemSlug) return "";
+
+    return problemSlug
+      .split("-")
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
   function getProblemData() {
     return {
-      title: findFirstText(SELECTORS.title) || "Problem title not detected",
+      title: findFirstText(SELECTORS.title) || titleFromUrl() || "Problem title not detected",
       difficulty: findDifficulty(),
       url: window.location.href,
     };

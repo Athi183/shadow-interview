@@ -55,13 +55,26 @@ globalThis.ShadowInterview.panel = (() => {
   }
 
   async function request(path, payload) {
-    const response = await fetch(`${INTERVIEW_API_URL}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) throw new Error(`Interview Engine returned ${response.status}`);
-    return response.json();
+    try {
+      const response = await fetch(`${INTERVIEW_API_URL}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const error = new Error(await response.text());
+        error.status = response.status;
+        throw error;
+      }
+
+      return response.json();
+    } catch (error) {
+      if (error instanceof TypeError) {
+        error.status = 0;
+      }
+      throw error;
+    }
   }
 
   async function createInterviewSession(problemData) {
@@ -99,6 +112,13 @@ globalThis.ShadowInterview.panel = (() => {
     utterance.onend = () => setStatus(isInterviewActive ? "Listening" : "Ready");
     utterance.onerror = () => setStatus(isInterviewActive ? "Listening" : "Ready");
     window.speechSynthesis.speak(utterance);
+  }
+
+  function interviewErrorMessage(error) {
+    if (error.status === 0) return "Unable to contact Interview Engine. Start FastAPI on localhost:8000.";
+    if (error.status === 503) return "OpenAI API key is missing. Set OPENAI_API_KEY in the backend terminal and restart FastAPI.";
+    if (error.status === 502) return "OpenAI could not generate a response. Check your model/key, then try again.";
+    return "The Interview Engine could not respond. Check the backend terminal for details.";
   }
 
   function mount(getProblemData) {
@@ -195,8 +215,8 @@ globalThis.ShadowInterview.panel = (() => {
         });
         aiText.textContent = response.ai_response;
         speak(response.ai_response, setStatus);
-      } catch {
-        aiText.textContent = "I could not reach the Interview Engine. Please check the backend and OpenAI key, then try again.";
+      } catch (error) {
+        aiText.textContent = interviewErrorMessage(error);
         setStatus("Ready");
       }
     }
