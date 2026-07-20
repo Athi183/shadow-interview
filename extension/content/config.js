@@ -5,6 +5,6 @@
 globalThis.ShadowInterview = globalThis.ShadowInterview || {};
 
 globalThis.ShadowInterview.config = {
-  apiBaseUrl: "http://localhost:8000",
-  workspaceUrl: "http://localhost:5173/evaluation",
+  apiBaseUrl: "https://shadow-interview-api.onrender.com",
+  workspaceUrl: "https://shadow-interview.vercel.app/evaluation",
 };
