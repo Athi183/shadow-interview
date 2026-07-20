@@ -4,7 +4,7 @@
 globalThis.ShadowInterview = globalThis.ShadowInterview || {};
 
 globalThis.ShadowInterview.codeObserver = (() => {
-  const API_BASE_URL = "http://localhost:8000";
+  const API_BASE_URL = globalThis.ShadowInterview.config?.apiBaseUrl || "http://localhost:8000";
   const SESSION_STORAGE_KEY = "shadowInterview:sessionId";
   const DEBOUNCE_MS = 2500;
   const MIN_MEANINGFUL_DELTA = 12;

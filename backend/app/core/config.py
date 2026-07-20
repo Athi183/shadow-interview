@@ -28,6 +28,21 @@ class Settings:
     groq_model: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
     groq_transcription_model: str = os.getenv("GROQ_TRANSCRIPTION_MODEL", "whisper-large-v3-turbo")
     groq_base_url: str = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+    frontend_origins: str = os.getenv("FRONTEND_ORIGINS", "")
+
+    @property
+    def cors_origins(self) -> list[str]:
+        configured_origins = [
+            origin.strip()
+            for origin in self.frontend_origins.split(",")
+            if origin.strip()
+        ]
+        return [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "https://leetcode.com",
+            *configured_origins,
+        ]
 
 
 settings = Settings()

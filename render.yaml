@@ -1,0 +1,30 @@
+# Responsibility: define the Render deployment for the FastAPI Interview Engine.
+# Render reads this blueprint when deploying from the repository root.
+
+services:
+  - type: web
+    name: shadow-interview-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: AI_PROVIDER
+        value: auto
+      - key: ENABLE_MOCK_FALLBACK
+        value: "true"
+      - key: OPENAI_MODEL
+        value: gpt-5.6
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: GROQ_TRANSCRIPTION_MODEL
+        value: whisper-large-v3-turbo
+      - key: GROQ_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: FRONTEND_ORIGINS
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false

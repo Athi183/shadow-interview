@@ -13,8 +13,8 @@ globalThis.ShadowInterview.panel = (() => {
     status: "shadow-interview-status",
     trailCount: "shadow-interview-trail-count",
   };
-  const INTERVIEW_WORKSPACE_URL = "http://localhost:5173/evaluation";
-  const INTERVIEW_API_URL = "http://localhost:8000";
+  const INTERVIEW_WORKSPACE_URL = globalThis.ShadowInterview.config?.workspaceUrl || "http://localhost:5173/evaluation";
+  const INTERVIEW_API_URL = globalThis.ShadowInterview.config?.apiBaseUrl || "http://localhost:8000";
   const SESSION_STORAGE_KEY = "shadowInterview:sessionId";
   const SPEECH_SILENCE_MS = 1800;
   const VOICE_SILENCE_MS = 1700;

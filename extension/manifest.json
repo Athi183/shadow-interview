@@ -3,11 +3,17 @@
   "name": "Shadow Interview",
   "version": "0.1.0",
   "description": "A local-only interview companion launcher for LeetCode problem pages.",
-  "host_permissions": ["http://localhost:8000/*", "http://127.0.0.1:8000/*"],
+  "host_permissions": [
+    "http://localhost:8000/*",
+    "http://127.0.0.1:8000/*",
+    "https://*.onrender.com/*",
+    "https://*.vercel.app/*"
+  ],
   "content_scripts": [
     {
       "matches": ["https://leetcode.com/problems/*"],
       "js": [
+        "content/config.js",
         "content/domParser.js",
         "content/codeObserver.js",
         "content/panel.js",

@@ -252,6 +252,124 @@ D:\PROJECTS\CODEX_PROJECT\shadow-interview\extension
 6. Open a LeetCode problem page.
 7. Click the Shadow Interview floating launcher.
 
+## Deploy
+
+Shadow Interview is split across two hosted surfaces:
+
+```text
+FastAPI backend -> Render
+React frontend  -> Vercel
+Chrome extension -> loaded locally or packaged for Chrome
+```
+
+### 1. Deploy the backend to Render
+
+The repository includes:
+
+```text
+render.yaml
+```
+
+Render can use this blueprint to deploy the FastAPI service from `backend/`.
+
+Recommended Render settings:
+
+```text
+Root directory: backend
+Build command: pip install -r requirements.txt
+Start command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+```
+
+Set these Render environment variables:
+
+```env
+AI_PROVIDER=auto
+ENABLE_MOCK_FALLBACK=true
+
+OPENAI_API_KEY=your_openai_key_if_available
+OPENAI_MODEL=gpt-5.6
+
+GROQ_API_KEY=your_groq_key
+GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_TRANSCRIPTION_MODEL=whisper-large-v3-turbo
+GROQ_BASE_URL=https://api.groq.com/openai/v1
+
+FRONTEND_ORIGINS=https://your-vercel-app.vercel.app
+```
+
+After deployment, confirm:
+
+```text
+https://your-render-service.onrender.com/health
+```
+
+### 2. Deploy the frontend to Vercel
+
+Deploy the `frontend/` folder as the Vercel project.
+
+Recommended Vercel settings:
+
+```text
+Framework preset: Vite
+Root directory: frontend
+Build command: npm run build
+Output directory: dist
+```
+
+Set this Vercel environment variable:
+
+```env
+VITE_INTERVIEW_API_URL=https://your-render-service.onrender.com
+```
+
+The frontend includes `frontend/vercel.json` so React Router routes such as `/evaluation` work after refresh.
+
+### 3. Point the Chrome extension at production
+
+The extension cannot read Vercel environment variables, so update:
+
+```text
+extension/content/config.js
+```
+
+For local development:
+
+```js
+globalThis.ShadowInterview.config = {
+  apiBaseUrl: "http://localhost:8000",
+  workspaceUrl: "http://localhost:5173/evaluation",
+};
+```
+
+For deployed demo:
+
+```js
+globalThis.ShadowInterview.config = {
+  apiBaseUrl: "https://your-render-service.onrender.com",
+  workspaceUrl: "https://your-vercel-app.vercel.app/evaluation",
+};
+```
+
+Then reload the unpacked extension from `chrome://extensions`.
+
+### Deployment flow
+
+```text
+Deploy Render backend
+        |
+        v
+Copy Render URL into Vercel as VITE_INTERVIEW_API_URL
+        |
+        v
+Deploy Vercel frontend
+        |
+        v
+Copy both URLs into extension/content/config.js
+        |
+        v
+Reload Chrome extension
+```
+
 ## Demo flow
 
 1. Open a LeetCode problem.
