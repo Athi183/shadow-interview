@@ -50,7 +50,7 @@
 .si-icon-spark { fill: #67e8f9; }
 .si-launcher-label { position: absolute; right: 74px; display: block; width: max-content; max-width: 190px; padding: 8px 11px; border: 1px solid rgba(196, 181, 253, 0.24); border-radius: 999px; background: rgba(15, 23, 42, 0.93); box-shadow: 0 12px 28px rgba(2, 6, 23, 0.22); color: #f8fafc; font-size: 12px; font-weight: 800; letter-spacing: 0.01em; opacity: 0; pointer-events: none; transform: translateX(8px) scale(0.96); transition: opacity 180ms ease, transform 180ms ease; }
 .si-launcher:hover .si-launcher-label, .si-launcher:focus-visible .si-launcher-label { opacity: 1; transform: translateX(0) scale(1); }
-.si-launcher-badge { position: absolute; top: -4px; right: -4px; display: none; min-width: 19px; height: 19px; place-items: center; border: 2px solid #0f172a; border-radius: 999px; background: #22d3ee; color: #020617; font-size: 11px; font-weight: 800; line-height: 1; }
+.si-launcher-badge { position: absolute; top: -8px; right: -8px; display: none; min-width: 22px; height: 22px; place-items: center; border: 2px solid #ffffff; border-radius: 999px; background: #22d3ee; box-shadow: 0 6px 14px rgba(15, 23, 42, 0.28); color: #020617; font-size: 11px; font-weight: 800; line-height: 1; }
 .si-launcher-badge-visible { display: grid; }
 
 .si-panel {
