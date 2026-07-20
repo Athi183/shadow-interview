@@ -49,7 +49,12 @@ globalThis.ShadowInterview.panel = (() => {
     const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     icon.setAttribute("viewBox", "0 0 24 24");
     icon.setAttribute("aria-hidden", "true");
-    icon.innerHTML = '<path d="M12 3a5 5 0 0 0-5 5v4a5 5 0 0 0 10 0V8a5 5 0 0 0-5-5Zm-7 8a1 1 0 0 0-2 0 9 9 0 0 0 8 8.94V22H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-2.06A9 9 0 0 0 21 11a1 1 0 1 0-2 0 7 7 0 0 1-14 0Z" />';
+    icon.innerHTML = [
+      '<path class="si-icon-shadow" d="M15.7 3.2a8.8 8.8 0 1 0 4.9 13.8 7.4 7.4 0 1 1-4.9-13.8Z" />',
+      '<path class="si-icon-mic" d="M12 4.2a3.8 3.8 0 0 0-3.8 3.8v3.2a3.8 3.8 0 1 0 7.6 0V8A3.8 3.8 0 0 0 12 4.2Z" />',
+      '<path class="si-icon-line" d="M5.6 11.1a6.4 6.4 0 0 0 12.8 0M12 17.5v3.1M8.8 20.6h6.4" />',
+      '<path class="si-icon-spark" d="M17.7 5.2 18.2 4l.5 1.2 1.2.5-1.2.5-.5 1.2-.5-1.2-1.2-.5 1.2-.5ZM4.7 6.8 5.1 6l.4.8.8.4-.8.4-.4.8-.4-.8-.8-.4.8-.4Z" />',
+    ].join("");
     return icon;
   }
 
@@ -179,6 +184,7 @@ globalThis.ShadowInterview.panel = (() => {
     launcher.setAttribute("aria-label", "Open Shadow Interview");
     launcher.setAttribute("aria-expanded", "false");
     launcher.append(createIcon());
+    launcher.append(createElement("span", "si-launcher-label", "Shadow Interview"));
     const launcherBadge = createElement("span", "si-launcher-badge", "0");
     launcherBadge.id = IDS.trailCount;
     launcherBadge.setAttribute("aria-label", "Covered interview items");

@@ -1,6 +1,18 @@
-<!-- Responsibility: provide the standalone microphone mark used by Shadow
-     Interview branding; the injected launcher uses an equivalent inline SVG. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <rect x="8" y="2" width="8" height="13" rx="4" />
-  <path d="M4 11a8 8 0 0 0 16 0M12 19v3M8 22h8" />
+<!-- Responsibility: provide the standalone Shadow Interview brand mark used
+     for extension previews and future icon exports. The injected launcher uses
+     the same shadow-microphone concept as inline SVG. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <rect width="128" height="128" rx="36" fill="#020617"/>
+  <circle cx="64" cy="64" r="48" fill="url(#orb)"/>
+  <path d="M82 27a47 47 0 1 0 26 73.5A39 39 0 1 1 82 27Z" fill="#C4B5FD"/>
+  <rect x="44" y="27" width="40" height="62" rx="20" fill="#F8FAFC"/>
+  <path d="M32 65c0 17.7 14.3 32 32 32s32-14.3 32-32M64 97v16M48 113h32" stroke="#F8FAFC" stroke-width="9" stroke-linecap="round"/>
+  <path d="M93 28l3-8 3 8 8 3-8 3-3 8-3-8-8-3 8-3ZM25 39l2-5 2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#67E8F9"/>
+  <defs>
+    <linearGradient id="orb" x1="24" x2="104" y1="21" y2="108" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="0.48" stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#0891B2"/>
+    </linearGradient>
+  </defs>
 </svg>
