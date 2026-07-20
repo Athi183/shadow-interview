@@ -11,6 +11,7 @@
   --si-accent: #8b5cf6;
   --si-accent-light: #a78bfa;
   --si-success: #34d399;
+  --si-offset-right: 88px;
   box-sizing: border-box;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -21,7 +22,7 @@
 .si-launcher {
   position: fixed;
   z-index: 2147483646;
-  right: 24px;
+  right: var(--si-offset-right);
   bottom: 24px;
   display: grid;
   width: 64px;
@@ -56,7 +57,7 @@
 .si-panel {
   position: fixed;
   z-index: 2147483645;
-  right: 24px;
+  right: var(--si-offset-right);
   bottom: 96px;
   width: min(390px, calc(100vw - 32px));
   overflow: hidden;
@@ -121,8 +122,13 @@
 }
 
 @media (max-width: 600px) {
-  .si-launcher { right: 16px; bottom: 16px; }
-  .si-panel { right: 16px; bottom: 86px; }
+  #shadow-interview-launcher,
+  #shadow-interview-panel {
+    --si-offset-right: 76px;
+  }
+
+  .si-launcher { bottom: 16px; }
+  .si-panel { bottom: 86px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
