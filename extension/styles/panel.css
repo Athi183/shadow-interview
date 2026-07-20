@@ -31,21 +31,21 @@
   border: 1px solid rgba(165, 243, 252, 0.42);
   border-radius: 50%;
   background:
-    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.3), transparent 20%),
-    radial-gradient(circle at 72% 80%, rgba(34, 211, 238, 0.28), transparent 28%),
-    linear-gradient(135deg, #0f172a 0%, #312e81 45%, #6d28d9 100%);
-  box-shadow: 0 18px 42px rgba(79, 70, 229, 0.42), 0 0 0 7px rgba(139, 92, 246, 0.08), 0 2px 8px rgba(15, 23, 42, 0.32);
+    radial-gradient(circle at 30% 24%, rgba(103, 232, 249, 0.32), transparent 22%),
+    radial-gradient(circle at 74% 82%, rgba(167, 139, 250, 0.34), transparent 30%),
+    linear-gradient(135deg, #020617 0%, #111827 42%, #312e81 100%);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.34), 0 0 0 7px rgba(79, 70, 229, 0.14), 0 0 28px rgba(139, 92, 246, 0.28);
   color: #fff;
   cursor: pointer;
   transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
 }
 
 .si-launcher:not([aria-expanded="true"]):not(:hover) { animation: si-launcher-glow 3.2s ease-in-out infinite; }
-.si-launcher:hover { filter: brightness(1.09); transform: translateY(-3px) scale(1.04); box-shadow: 0 20px 46px rgba(79, 70, 229, 0.56), 0 0 0 9px rgba(34, 211, 238, 0.1); }
+.si-launcher:hover { filter: brightness(1.12); transform: translateY(-3px) scale(1.04); box-shadow: 0 22px 48px rgba(15, 23, 42, 0.4), 0 0 0 9px rgba(34, 211, 238, 0.16), 0 0 34px rgba(139, 92, 246, 0.35); }
 .si-launcher:active { transform: translateY(0) scale(0.97); }
 .si-launcher:focus-visible, .si-panel button:focus-visible { outline: 3px solid #c4b5fd; outline-offset: 3px; }
 .si-launcher svg { width: 36px; height: 36px; filter: drop-shadow(0 4px 8px rgba(2, 6, 23, 0.28)); }
-.si-icon-shadow { fill: #c4b5fd; opacity: 0.96; }
+.si-icon-shadow { fill: #8b5cf6; opacity: 0.96; }
 .si-icon-mic { fill: #f8fafc; }
 .si-icon-line { fill: none; stroke: #f8fafc; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .si-icon-spark { fill: #67e8f9; }
@@ -113,7 +113,7 @@
 
 @keyframes si-launcher-glow {
   0%, 100% { box-shadow: 0 18px 42px rgba(79, 70, 229, 0.42), 0 0 0 7px rgba(139, 92, 246, 0.08), 0 2px 8px rgba(15, 23, 42, 0.32); }
-  50% { box-shadow: 0 20px 50px rgba(124, 58, 237, 0.62), 0 0 0 10px rgba(34, 211, 238, 0.12), 0 0 32px rgba(167, 139, 250, 0.2); }
+  50% { box-shadow: 0 20px 50px rgba(15, 23, 42, 0.42), 0 0 0 10px rgba(34, 211, 238, 0.16), 0 0 36px rgba(167, 139, 250, 0.28); }
 }
 
 @keyframes si-content-enter {
