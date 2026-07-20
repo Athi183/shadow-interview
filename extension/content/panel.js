@@ -19,11 +19,10 @@ globalThis.ShadowInterview.panel = (() => {
 
   let sessionId = "";
   let isInterviewActive = false;
+  let isRecognitionPausedForSpeech = false;
   let recognition = null;
-  let fullTranscript = "";
   let pendingTranscript = "";
   let interimTranscript = "";
-  let lastSentTranscript = "";
   let speechSilenceTimer = null;
 
   function createElement(tag, className, text) {
@@ -104,9 +103,10 @@ globalThis.ShadowInterview.panel = (() => {
     return window.SpeechRecognition || window.webkitSpeechRecognition;
   }
 
-  function speak(text, setStatus) {
+  function speak(text, setStatus, onDone) {
     if (!window.speechSynthesis || !text) {
       setStatus("Listening");
+      onDone?.();
       return;
     }
 
@@ -114,8 +114,14 @@ globalThis.ShadowInterview.panel = (() => {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 0.95;
     utterance.onstart = () => setStatus("AI Speaking");
-    utterance.onend = () => setStatus(isInterviewActive ? "Listening" : "Ready");
-    utterance.onerror = () => setStatus(isInterviewActive ? "Listening" : "Ready");
+    utterance.onend = () => {
+      setStatus(isInterviewActive ? "Listening" : "Ready");
+      onDone?.();
+    };
+    utterance.onerror = () => {
+      setStatus(isInterviewActive ? "Listening" : "Ready");
+      onDone?.();
+    };
     window.speechSynthesis.speak(utterance);
   }
 
@@ -219,11 +225,35 @@ globalThis.ShadowInterview.panel = (() => {
       }
     }
 
+    function pauseRecognitionForInterviewer() {
+      if (!recognition) return;
+
+      isRecognitionPausedForSpeech = true;
+      window.clearTimeout(speechSilenceTimer);
+      try {
+        recognition.stop();
+      } catch {
+        // The browser may already have stopped recognition between speech turns.
+      }
+    }
+
+    function resumeRecognitionAfterInterviewer() {
+      if (!isInterviewActive || !recognition) return;
+
+      isRecognitionPausedForSpeech = false;
+      try {
+        recognition.start();
+      } catch {
+        // Chrome can throw if recognition is already active; the current session can continue.
+      }
+    }
+
     async function sendCandidateMessage(candidateMessage) {
       if (!sessionId || !candidateMessage.trim()) return;
 
       setStatus("Processing");
       transcriptText.textContent = candidateMessage;
+      pauseRecognitionForInterviewer();
       try {
         const currentCode = globalThis.ShadowInterview.codeObserver?.getCurrentCode?.() || "";
         const response = await request("/session/message", {
@@ -232,35 +262,37 @@ globalThis.ShadowInterview.panel = (() => {
           current_code: currentCode,
         });
         aiText.textContent = response.ai_response;
-        speak(response.ai_response, setStatus);
+        speak(response.ai_response, setStatus, resumeRecognitionAfterInterviewer);
       } catch (error) {
         aiText.textContent = interviewErrorMessage(error);
-        setStatus("Ready");
+        if (isInterviewActive) {
+          setStatus("Listening");
+          resumeRecognitionAfterInterviewer();
+        } else {
+          setStatus("Ready");
+        }
       }
     }
 
     function resetSpeechBuffers() {
-      fullTranscript = "";
       pendingTranscript = "";
       interimTranscript = "";
-      lastSentTranscript = "";
       window.clearTimeout(speechSilenceTimer);
     }
 
     function readableTranscript() {
-      return [fullTranscript, pendingTranscript, interimTranscript].filter(Boolean).join(" ").trim();
+      return [pendingTranscript, interimTranscript].filter(Boolean).join(" ").trim();
     }
 
     function scheduleSpeechSend() {
       window.clearTimeout(speechSilenceTimer);
       speechSilenceTimer = window.setTimeout(() => {
         const candidateMessage = (pendingTranscript || interimTranscript).trim();
-        if (!candidateMessage || candidateMessage === lastSentTranscript) return;
+        if (!candidateMessage) return;
 
-        lastSentTranscript = candidateMessage;
-        fullTranscript = `${fullTranscript} ${candidateMessage}`.trim();
         pendingTranscript = "";
         interimTranscript = "";
+        transcriptText.textContent = candidateMessage;
         sendCandidateMessage(candidateMessage);
       }, SPEECH_SILENCE_MS);
     }
@@ -301,6 +333,8 @@ globalThis.ShadowInterview.panel = (() => {
         setStatus("Ready");
       };
       recognition.onend = () => {
+        if (isRecognitionPausedForSpeech) return;
+
         if (isInterviewActive) {
           try {
             recognition.start();
@@ -321,6 +355,7 @@ globalThis.ShadowInterview.panel = (() => {
         const session = await createInterviewSession(problemData);
         storeSessionId(session.session_id);
         isInterviewActive = true;
+        isRecognitionPausedForSpeech = false;
         resetSpeechBuffers();
         startButton.textContent = "Stop Interview";
         aiText.textContent = "I'm listening. Start by explaining your first approach before writing code.";
@@ -335,6 +370,7 @@ globalThis.ShadowInterview.panel = (() => {
 
     async function stopInterview() {
       isInterviewActive = false;
+      isRecognitionPausedForSpeech = false;
       startButton.disabled = true;
       setStatus("Ending interview");
       window.clearTimeout(speechSilenceTimer);
@@ -384,6 +420,7 @@ globalThis.ShadowInterview.panel = (() => {
       const message = manualInput.value.trim();
       if (!message) return;
       manualInput.value = "";
+      resetSpeechBuffers();
       sendCandidateMessage(message);
     });
     manualInput.addEventListener("keydown", (event) => {
