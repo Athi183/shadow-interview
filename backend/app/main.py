@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.routers.sessions import router as sessions_router
+from app.routers.speech import router as speech_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -25,6 +26,7 @@ app.add_middleware(
 )
 
 app.include_router(sessions_router)
+app.include_router(speech_router)
 
 
 @app.get("/health", tags=["system"])

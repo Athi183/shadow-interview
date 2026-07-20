@@ -26,6 +26,7 @@ class Settings:
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-5.6")
     groq_api_key: str | None = os.getenv("GROQ_API_KEY")
     groq_model: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    groq_transcription_model: str = os.getenv("GROQ_TRANSCRIPTION_MODEL", "whisper-large-v3-turbo")
     groq_base_url: str = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
 
 

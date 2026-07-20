@@ -49,6 +49,7 @@ Groq can be used as an optional fallback when OpenAI quota is unavailable:
 ```bash
 export GROQ_API_KEY="your_groq_key_here"
 export GROQ_MODEL="llama-3.3-70b-versatile"
+export GROQ_TRANSCRIPTION_MODEL="whisper-large-v3-turbo"
 ```
 
 For reliable local demos without any external provider:
@@ -75,4 +76,5 @@ POST /session/event
 POST /session/end
 GET  /session/report/{session_id}
 POST /session/report/export
+POST /speech/transcribe
 ```

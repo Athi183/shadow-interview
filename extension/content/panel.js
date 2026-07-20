@@ -16,11 +16,22 @@ globalThis.ShadowInterview.panel = (() => {
   const INTERVIEW_API_URL = "http://localhost:8000";
   const SESSION_STORAGE_KEY = "shadowInterview:sessionId";
   const SPEECH_SILENCE_MS = 1800;
+  const VOICE_SILENCE_MS = 1700;
+  const MIN_VOICE_TURN_MS = 800;
+  const VOICE_RMS_THRESHOLD = 0.025;
 
   let sessionId = "";
   let isInterviewActive = false;
   let isRecognitionPausedForSpeech = false;
   let recognition = null;
+  let voiceStream = null;
+  let audioContext = null;
+  let analyser = null;
+  let voiceMonitorId = null;
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let recordingStartedAt = 0;
+  let silenceStartedAt = 0;
   let pendingTranscript = "";
   let interimTranscript = "";
   let speechSilenceTimer = null;
@@ -81,6 +92,24 @@ globalThis.ShadowInterview.panel = (() => {
     }
   }
 
+  async function transcribeAudio(audioBlob) {
+    const formData = new FormData();
+    formData.append("audio", audioBlob, "candidate-turn.webm");
+
+    const response = await fetch(`${INTERVIEW_API_URL}/speech/transcribe`, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const error = new Error(await response.text());
+      error.status = response.status;
+      throw error;
+    }
+
+    return response.json();
+  }
+
   async function createInterviewSession(problemData) {
     return request("/session/start", {
       problem_title: problemData.title,
@@ -128,7 +157,9 @@ globalThis.ShadowInterview.panel = (() => {
   function interviewErrorMessage(error) {
     const details = error.message || "";
     if (error.status === 0) return "Unable to contact Interview Engine. Start FastAPI on localhost:8000.";
+    if (error.status === 503 && /GROQ_API_KEY/i.test(details)) return "Groq API key is missing. Add GROQ_API_KEY to backend/.env and restart FastAPI.";
     if (error.status === 503) return "OpenAI API key is missing. Set OPENAI_API_KEY in the backend terminal and restart FastAPI.";
+    if (error.status === 502 && /transcription|audio|Groq/i.test(details)) return "High-accuracy voice transcription failed. Check your Groq key/model and backend logs.";
     if (error.status === 502 && /quota|insufficient_quota|billing/i.test(details)) {
       return "OpenAI quota is exhausted. Check your API billing/quota, then try again.";
     }
@@ -226,10 +257,16 @@ globalThis.ShadowInterview.panel = (() => {
     }
 
     function pauseRecognitionForInterviewer() {
-      if (!recognition) return;
-
       isRecognitionPausedForSpeech = true;
       window.clearTimeout(speechSilenceTimer);
+      if (mediaRecorder?.state === "recording") {
+        try {
+          mediaRecorder.stop();
+        } catch {
+          // The recorder may already be closing this turn.
+        }
+      }
+      if (!recognition) return;
       try {
         recognition.stop();
       } catch {
@@ -238,9 +275,10 @@ globalThis.ShadowInterview.panel = (() => {
     }
 
     function resumeRecognitionAfterInterviewer() {
-      if (!isInterviewActive || !recognition) return;
+      if (!isInterviewActive) return;
 
       isRecognitionPausedForSpeech = false;
+      if (!recognition) return;
       try {
         recognition.start();
       } catch {
@@ -297,6 +335,135 @@ globalThis.ShadowInterview.panel = (() => {
       }, SPEECH_SILENCE_MS);
     }
 
+    function preferredAudioMimeType() {
+      const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"];
+      return candidates.find((type) => window.MediaRecorder?.isTypeSupported?.(type)) || "";
+    }
+
+    function currentMicVolume() {
+      if (!analyser) return 0;
+
+      const samples = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(samples);
+
+      let sumSquares = 0;
+      for (const sample of samples) {
+        const normalized = (sample - 128) / 128;
+        sumSquares += normalized * normalized;
+      }
+      return Math.sqrt(sumSquares / samples.length);
+    }
+
+    function startAudioTurn() {
+      if (!voiceStream || mediaRecorder?.state === "recording") return;
+
+      const mimeType = preferredAudioMimeType();
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(voiceStream, mimeType ? { mimeType } : undefined);
+      recordingStartedAt = Date.now();
+      silenceStartedAt = 0;
+      transcriptText.textContent = "Listening to your answer...";
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data?.size) audioChunks.push(event.data);
+      };
+      mediaRecorder.onstop = () => {
+        const duration = Date.now() - recordingStartedAt;
+        const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || "audio/webm" });
+        audioChunks = [];
+        if (duration >= MIN_VOICE_TURN_MS && blob.size > 0 && isInterviewActive) {
+          processAudioTurn(blob);
+        }
+      };
+      mediaRecorder.start();
+      setStatus("Listening");
+    }
+
+    function stopAudioTurn() {
+      if (mediaRecorder?.state !== "recording") return;
+
+      try {
+        mediaRecorder.stop();
+      } catch {
+        // MediaRecorder can throw if Chrome has already ended this chunk.
+      }
+    }
+
+    async function processAudioTurn(audioBlob) {
+      if (isRecognitionPausedForSpeech) return;
+
+      setStatus("Transcribing");
+      try {
+        const transcription = await transcribeAudio(audioBlob);
+        const transcript = transcription.transcript?.trim();
+        if (!transcript) {
+          setStatus("Listening");
+          return;
+        }
+        resetSpeechBuffers();
+        transcriptText.textContent = transcript;
+        sendCandidateMessage(transcript);
+      } catch (error) {
+        aiText.textContent = interviewErrorMessage(error);
+        setStatus(isInterviewActive ? "Listening" : "Ready");
+      }
+    }
+
+    function monitorVoice() {
+      if (!isInterviewActive || !voiceStream) return;
+
+      const volume = currentMicVolume();
+      const isSpeaking = volume >= VOICE_RMS_THRESHOLD;
+
+      if (!isRecognitionPausedForSpeech) {
+        if (isSpeaking && mediaRecorder?.state !== "recording") {
+          startAudioTurn();
+        } else if (mediaRecorder?.state === "recording") {
+          if (isSpeaking) {
+            silenceStartedAt = 0;
+          } else {
+            silenceStartedAt ||= Date.now();
+            if (Date.now() - silenceStartedAt >= VOICE_SILENCE_MS) stopAudioTurn();
+          }
+        }
+      }
+
+      voiceMonitorId = window.requestAnimationFrame(monitorVoice);
+    }
+
+    async function startHighAccuracyVoice() {
+      if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+        throw new Error("MediaRecorder microphone capture is unavailable.");
+      }
+
+      voiceStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      audioContext = new AudioContext();
+      const source = audioContext.createMediaStreamSource(voiceStream);
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      source.connect(analyser);
+      aiText.textContent = "High-accuracy voice is ready. Speak your next thought, then pause briefly.";
+      setStatus("Listening");
+      monitorVoice();
+    }
+
+    function stopHighAccuracyVoice() {
+      if (voiceMonitorId) window.cancelAnimationFrame(voiceMonitorId);
+      voiceMonitorId = null;
+      stopAudioTurn();
+      voiceStream?.getTracks().forEach((track) => track.stop());
+      voiceStream = null;
+      audioContext?.close?.();
+      audioContext = null;
+      analyser = null;
+    }
+
     function startListening() {
       const SpeechRecognition = getSpeechRecognition();
       if (!SpeechRecognition) {
@@ -347,6 +514,15 @@ globalThis.ShadowInterview.panel = (() => {
       setStatus("Listening");
     }
 
+    async function startVoiceInput() {
+      try {
+        await startHighAccuracyVoice();
+      } catch {
+        aiText.textContent = "High-accuracy voice could not start. Falling back to browser speech recognition.";
+        startListening();
+      }
+    }
+
     async function startInterview() {
       const problemData = getProblemData();
       startButton.disabled = true;
@@ -359,7 +535,7 @@ globalThis.ShadowInterview.panel = (() => {
         resetSpeechBuffers();
         startButton.textContent = "Stop Interview";
         aiText.textContent = "I'm listening. Start by explaining your first approach before writing code.";
-        startListening();
+        await startVoiceInput();
       } catch {
         aiText.textContent = "Unable to contact Interview Engine. Start the FastAPI backend, then try again.";
         setStatus("Ready");
@@ -374,6 +550,7 @@ globalThis.ShadowInterview.panel = (() => {
       startButton.disabled = true;
       setStatus("Ending interview");
       window.clearTimeout(speechSilenceTimer);
+      stopHighAccuracyVoice();
       recognition?.stop();
       window.speechSynthesis?.cancel();
       try {

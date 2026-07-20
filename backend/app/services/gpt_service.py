@@ -118,5 +118,35 @@ class GPTService:
             return "Good instinct. Pick one tricky edge case and walk me through how your logic handles it without special pleading."
         return "Let’s make that more concrete. What is your first approach, what data structure would you use, and why is it valid for this problem?"
 
+    def transcribe_audio(self, *, filename: str, content: bytes, content_type: str | None = None) -> str:
+        """Transcribe candidate speech with Groq-hosted Whisper.
+
+        Audio transcription intentionally uses Groq only because the OpenAI API
+        quota can be unavailable during local hackathon development, while Groq
+        provides a fast Whisper-compatible endpoint.
+        """
+
+        if not settings.groq_api_key:
+            raise MissingOpenAIKeyError("GROQ_API_KEY is not configured for high-accuracy voice transcription.")
+
+        try:
+            transcription = self._get_groq_client().audio.transcriptions.create(
+                file=(filename, content, content_type or "audio/webm"),
+                model=settings.groq_transcription_model,
+                prompt="Technical coding interview speech. Preserve terms like LeetCode, HashMap, DFS, BFS, DP, memoization, recursion, O(n), and dynamic programming.",
+                response_format="json",
+                language="en",
+                temperature=0,
+            )
+        except APIError as exc:
+            raise GPTServiceError(f"Groq transcription API error: {exc}") from exc
+        except OpenAIError as exc:
+            raise GPTServiceError(f"Groq transcription SDK error: {exc}") from exc
+
+        transcript = getattr(transcription, "text", "").strip()
+        if not transcript:
+            raise GPTServiceError("Groq returned an empty transcription.")
+        return transcript
+
 
 gpt_service = GPTService()
