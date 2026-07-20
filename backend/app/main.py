@@ -25,6 +25,16 @@ app.include_router(sessions_router)
 app.include_router(speech_router)
 
 
+@app.get("/", tags=["system"])
+def root() -> dict[str, str]:
+    return {
+        "status": "ok",
+        "service": settings.app_name,
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 @app.get("/health", tags=["system"])
 def health_check() -> dict[str, str]:
     return {"status": "ok", "service": settings.app_name}
