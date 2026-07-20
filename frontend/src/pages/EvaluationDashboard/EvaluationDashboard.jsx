@@ -11,6 +11,7 @@ export default function EvaluationDashboardPage() {
   const navigate = useNavigate();
   const [report, setReport] = useState(fallbackEvaluationReport);
   const sessionId = searchParams.get("sessionId") || getStoredSessionId();
+  const problemUrl = report.problem?.url || searchParams.get("problemUrl") || "";
 
   useEffect(() => {
     if (!sessionId) return;
@@ -37,12 +38,21 @@ export default function EvaluationDashboardPage() {
     downloadText("shadow-interview-report.md", exportPayload.content, "text/markdown");
   }
 
+  function restartInterview() {
+    if (problemUrl) {
+      window.location.href = problemUrl;
+      return;
+    }
+
+    navigate("/interview");
+  }
+
   return (
     <Dashboard
       report={report}
       onDownloadJson={downloadJson}
       onDownloadMarkdown={downloadMarkdown}
-      onRestart={() => navigate("/interview")}
+      onRestart={restartInterview}
     />
   );
 }
