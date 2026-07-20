@@ -20,8 +20,13 @@ load_dotenv(BACKEND_ROOT / ".env")
 class Settings:
     app_name: str = os.getenv("APP_NAME", "Shadow Interview API")
     app_version: str = os.getenv("APP_VERSION", "0.1.0")
+    ai_provider: str = os.getenv("AI_PROVIDER", "auto").lower()
+    enable_mock_fallback: bool = os.getenv("ENABLE_MOCK_FALLBACK", "true").lower() in {"1", "true", "yes", "on"}
     openai_api_key: str | None = os.getenv("OPENAI_API_KEY")
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-5.6")
+    groq_api_key: str | None = os.getenv("GROQ_API_KEY")
+    groq_model: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    groq_base_url: str = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
 
 
 settings = Settings()

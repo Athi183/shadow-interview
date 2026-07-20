@@ -3,7 +3,7 @@
 This directory contains the FastAPI Interview Engine. It manages in-memory
 interview sessions, receives interview events, tracks a finite-state workflow,
 records timeline entries, analyzes candidate reasoning, builds compact GPT
-context, generates final evaluation reports, and isolates OpenAI API communication inside `GPTService`.
+context, generates final evaluation reports, and isolates AI provider communication inside `GPTService`.
 
 The backend does not use a database, authentication, external speech APIs, or PDF export yet.
 
@@ -18,7 +18,7 @@ The backend does not use a database, authentication, external speech APIs, or PD
 - `app/services/context_builder.py`: compact GPT input object.
 - `app/services/interview_orchestrator.py`: stage transitions and interviewer response orchestration.
 - `app/services/timeline_generator.py`: timeline event recording.
-- `app/services/gpt_service.py`: OpenAI SDK boundary.
+- `app/services/gpt_service.py`: AI provider boundary. OpenAI is primary, Groq is optional fallback, and mock mode supports local demos.
 - `app/services/evaluation_engine.py`: final report pipeline coordinator.
 - `app/services/communication_analyzer.py`: communication scoring signals.
 - `app/services/code_analyzer.py`: code quality and complexity signals.
@@ -28,16 +28,33 @@ The backend does not use a database, authentication, external speech APIs, or PD
 
 ## Environment
 
-Set your OpenAI API key before calling `/session/message`:
+The backend supports four provider modes:
+
+```bash
+export AI_PROVIDER="auto"   # OpenAI first, Groq second, mock fallback last
+export AI_PROVIDER="openai" # force OpenAI only
+export AI_PROVIDER="groq"   # force Groq only
+export AI_PROVIDER="mock"   # local demo mode, no external API calls
+```
+
+OpenAI remains the intended GPT-5.6 provider:
 
 ```bash
 export OPENAI_API_KEY="your_api_key_here"
+export OPENAI_MODEL="gpt-5.6"
 ```
 
-Optionally override the model:
+Groq can be used as an optional fallback when OpenAI quota is unavailable:
 
 ```bash
-export OPENAI_MODEL="gpt-5.6"
+export GROQ_API_KEY="your_groq_key_here"
+export GROQ_MODEL="llama-3.3-70b-versatile"
+```
+
+For reliable local demos without any external provider:
+
+```bash
+export AI_PROVIDER="mock"
 ```
 
 ## Local commands
