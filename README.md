@@ -252,6 +252,18 @@ D:\PROJECTS\CODEX_PROJECT\shadow-interview\extension
 6. Open a LeetCode problem page.
 7. Click the Shadow Interview floating launcher.
 
+To create a downloadable extension ZIP for judges:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/package-extension.ps1
+```
+
+The package will be created at:
+
+```text
+dist/shadow-interview-extension.zip
+```
+
 ## Deploy
 
 Shadow Interview is split across two hosted surfaces:
