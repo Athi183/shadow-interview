@@ -6,6 +6,39 @@ Shadow Interview is a Chrome extension, React workspace, and FastAPI interview e
 
 The project is designed for GPT-5.6 as the primary interviewer model, with Groq and local mock fallbacks so the live demo remains reliable even when API quota is unavailable.
 
+## Demo
+
+Watch the demo video:
+
+[Shadow Interview demo on YouTube](https://youtu.be/apzek_aRr40)
+
+Live project links:
+
+- Frontend dashboard: [https://shadow-interview.vercel.app/](https://shadow-interview.vercel.app/)
+- Backend health check: [https://shadow-interview-api.onrender.com/health](https://shadow-interview-api.onrender.com/health)
+
+## Screenshots
+
+### LeetCode extension panel
+
+![Shadow Interview running inside LeetCode](assets/screenshots/leetcode-extension-panel.png)
+
+### Live interview coverage
+
+![Shadow Interview showing covered interview questions and events](assets/screenshots/live-interview-coverage.png)
+
+### Evaluation dashboard
+
+![Shadow Interview final evaluation dashboard](assets/screenshots/evaluation-dashboard.png)
+
+### React interview workspace
+
+![Shadow Interview React interview workspace](assets/screenshots/interview-workspace.png)
+
+### Landing page
+
+![Shadow Interview landing page](assets/screenshots/landing-page.png)
+
 ## What it does
 
 Shadow Interview transforms this flow:
